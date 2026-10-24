@@ -32,6 +32,7 @@ interface FilePreviewModalProps {
 
 const IMAGE_EXTENSIONS = ['jpeg', 'jpg', 'png', 'svg', 'webp', 'gif'];
 const isImage = (type: string) => IMAGE_EXTENSIONS.includes(type.toLowerCase());
+const VAULT_STREAM_HOST = import.meta.env.PROD ? 'https://api.tryaudrio.app' : '';
 
 export function FilePreviewModal({
   file,
@@ -140,7 +141,7 @@ export function FilePreviewModal({
 
     const ext = file.type.toLowerCase();
     // Obfuscated Base64 endpoint to completely bypass IDM system-level network interceptor
-    const previewStreamUrl = `/api/doc-stream?doc=${encodeURIComponent(btoa(file.url))}`;
+    const previewStreamUrl = `${VAULT_STREAM_HOST}/api/doc-stream?doc=${encodeURIComponent(btoa(file.url))}`;
 
     // 1. PDF: stream binary through obfuscated endpoint and create RAM blob URL
     if (ext === 'pdf') {
@@ -204,7 +205,7 @@ export function FilePreviewModal({
         if (hasNext) {
           const nextFile = imageFiles[currentImageIndex + 1];
           if (!blobCacheRef.current.has(nextFile.url)) {
-            const nextStream = `/api/doc-stream?doc=${encodeURIComponent(btoa(nextFile.url))}`;
+            const nextStream = `${VAULT_STREAM_HOST}/api/doc-stream?doc=${encodeURIComponent(btoa(nextFile.url))}`;
             fetch(nextStream)
               .then((res) => res.blob())
               .then((b) => {
@@ -220,7 +221,7 @@ export function FilePreviewModal({
         if (hasPrev) {
           const prevFile = imageFiles[currentImageIndex - 1];
           if (!blobCacheRef.current.has(prevFile.url)) {
-            const prevStream = `/api/doc-stream?doc=${encodeURIComponent(btoa(prevFile.url))}`;
+            const prevStream = `${VAULT_STREAM_HOST}/api/doc-stream?doc=${encodeURIComponent(btoa(prevFile.url))}`;
             fetch(prevStream)
               .then((res) => res.blob())
               .then((b) => {

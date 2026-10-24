@@ -2329,8 +2329,10 @@ export default function App() {
 
   const handleDownload = (file: { name: string; url: string }) => {
     triggerToast(`Downloading ${file.name}`);
+    const host = import.meta.env.PROD ? 'https://api.tryaudrio.app' : '';
+    const fullUrl = file.url.startsWith('http') ? file.url : `${host}${file.url}`;
     const a = document.createElement('a');
-    a.href = file.url;
+    a.href = fullUrl;
     a.download = file.name;
     document.body.appendChild(a);
     a.click();
