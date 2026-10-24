@@ -3,7 +3,7 @@ import * as docx from 'docx-preview';
 import { marked } from 'marked';
 import { ReactPptxViewer } from '@extend-ai/react-pptx';
 import '@extend-ai/react-pptx/styles.css';
-import { DocumentReader } from './DocumentReader';
+import { SlatePdfReader } from './SlatePdfReader';
 
 marked.use({
   gfm: true,
@@ -376,7 +376,7 @@ export function FilePreviewModal({
           className="w-full h-full overflow-hidden flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
-          <DocumentReader
+          <SlatePdfReader
             fileUrl={file.url}
             fileName={file.name}
             fileSize={file.size}
