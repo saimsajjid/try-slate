@@ -149,8 +149,12 @@ textarea,
 #downloadButton,
 #openFileButton,
 #secondaryToolbarToggle,
+#viewOutline,
 #viewAttachments,
-#viewLayers {
+#viewLayers,
+#toolbarSidebarRight,
+#outlineOptionsContainer,
+#currentOutlineItem {
   display: none !important;
 }
 
