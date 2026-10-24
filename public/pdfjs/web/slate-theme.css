@@ -6,7 +6,7 @@
   --body-bg-color: #0A0A0C !important;
   --toolbar-bg-color: #141417 !important;
   --toolbar-border-color: #222226 !important;
-  --toolbar-height: 40px !important;
+  --toolbar-height: 44px !important;
   --sidebar-narrow-bg-color: #101013 !important;
   --sidebar-toolbar-bg-color: #141417 !important;
   --doorhanger-bg-color: #18181C !important;
@@ -42,41 +42,127 @@ textarea,
   font-family: 'JetBrains Mono', monospace !important;
 }
 
-/* 1. Global Layout & Structural Alignment - Zero Congestion */
+/* 1. Global Layout & Structural Alignment - Unified Top Bar */
 #toolbarContainer,
 #toolbarSidebar {
-  height: 40px !important;
+  height: 44px !important;
   background-color: #141417 !important;
   border-bottom: 1px solid #222226 !important;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3) !important;
+  position: relative !important;
 }
 
 #toolbarViewer {
-  height: 40px !important;
-  padding: 0 8px !important;
+  height: 44px !important;
+  padding: 0 12px !important;
   display: flex !important;
   align-items: center !important;
+  justify-content: space-between !important;
+  position: relative !important;
+}
+
+#toolbarViewerLeft {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+}
+
+#toolbarViewerMiddle {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  flex: 0 0 auto !important;
+}
+
+#toolbarViewerRight {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+}
+
+.toolbarVerticalDivider {
+  width: 1px !important;
+  height: 18px !important;
+  background-color: #27272A !important;
+  margin: 0 4px !important;
+  flex-shrink: 0 !important;
+}
+
+#documentHeaderInfo {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+.docTypeBadge {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  padding: 1px 6px !important;
+  border-radius: 4px !important;
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  color: #D4D4D8 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  text-transform: uppercase !important;
+  flex-shrink: 0 !important;
+}
+
+.docTitleText {
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #F4F4F5 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 250px !important;
+}
+
+.docSizeText {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 11px !important;
+  color: #71717A !important;
+  flex-shrink: 0 !important;
+}
+
+.pageNumberGroup {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.toolbarButtonSpacer,
+.splitToolbarButtonSeparator {
+  display: none !important;
 }
 
 #sidebarContainer {
   background-color: #101013 !important;
   border-right: 1px solid #222226 !important;
-  inset-block-start: 40px !important; /* Perfect alignment with main toolbar */
-  height: calc(100% - 40px) !important;
+  inset-block-start: 44px !important;
+  height: calc(100% - 44px) !important;
 }
 
 #viewerContainer {
   background-color: #0A0A0C !important;
   background-image: radial-gradient(circle at 50% 25%, rgba(255, 255, 255, 0.02) 0%, transparent 60%) !important;
-  inset-block-start: 40px !important;
-  height: calc(100% - 40px) !important;
+  inset-block-start: 44px !important;
+  height: calc(100% - 44px) !important;
 }
 
-/* 2. Refined, Minimalist Buttons - Zero Overlap */
+/* 2. Refined, Minimalist Buttons */
 .toolbarButton,
 .secondaryToolbarButton {
   border-radius: 6px !important;
-  margin: 0 2px !important;
+  margin: 0 1px !important;
   border: 1px solid transparent !important;
   background-color: transparent !important;
   color: #A1A1AA !important;
@@ -90,7 +176,6 @@ textarea,
   color: #FFFFFF !important;
 }
 
-/* Toggled / Active State: Sleek subtle highlight instead of neon orange block */
 .toolbarButton.toggled,
 .splitToolbarButton.toggled > .toolbarButton {
   background-color: rgba(255, 255, 255, 0.14) !important;
@@ -99,14 +184,61 @@ textarea,
   box-shadow: none !important;
 }
 
+/* Download & Close Action Buttons */
+#downloadButton.labeledButton {
+  height: 28px !important;
+  padding: 0 10px !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #E4E4E7 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+#downloadButton.labeledButton:hover {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: #FFFFFF !important;
+}
+
+#closeButton.closeHeaderButton {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 6px !important;
+  font-size: 13px !important;
+  background-color: transparent !important;
+  border: 1px solid transparent !important;
+  color: #A1A1AA !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+#closeButton.closeHeaderButton:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #FFFFFF !important;
+}
+
 /* 3. Page Controls & Inputs */
 #pageNumber {
+  width: 36px !important;
+  height: 26px !important;
   background-color: #101013 !important;
   color: #F4F4F5 !important;
   border: 1px solid #2E2E33 !important;
   border-radius: 6px !important;
-  padding: 2px 6px !important;
+  padding: 0 !important;
   font-size: 12px !important;
+  text-align: center !important;
   transition: border-color 0.15s ease !important;
 }
 
@@ -119,16 +251,17 @@ textarea,
 #numPages {
   color: #71717A !important;
   font-size: 12px !important;
-  padding-left: 4px !important;
+  padding: 0 4px !important;
 }
 
 /* 4. Zoom Dropdown */
 .dropdownToolbarButton select {
+  height: 28px !important;
   background-color: #101013 !important;
   color: #F4F4F5 !important;
   border: 1px solid #2E2E33 !important;
   border-radius: 6px !important;
-  padding: 3px 20px 3px 8px !important;
+  padding: 0 20px 0 8px !important;
   font-size: 12px !important;
 }
 
@@ -146,7 +279,6 @@ textarea,
 #editorModeButtons,
 #editorModeSeparator,
 #printButton,
-#downloadButton,
 #openFileButton,
 #secondaryToolbarToggle,
 #viewOutline,
@@ -154,7 +286,8 @@ textarea,
 #viewLayers,
 #toolbarSidebarRight,
 #outlineOptionsContainer,
-#currentOutlineItem {
+#currentOutlineItem,
+#hiddenPdfEngineElements {
   display: none !important;
 }
 
@@ -211,9 +344,9 @@ textarea,
 
 /* 8. Document Viewport & Pages */
 .page {
-  margin: 24px auto !important;
+  margin: 12px auto !important;
   border-radius: 4px !important;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7), 0 2px 6px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6) !important;
   border: 1px solid rgba(255, 255, 255, 0.07) !important;
 }
 
@@ -223,7 +356,10 @@ textarea,
   border: 1px solid #27272A !important;
   border-radius: 8px !important;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
-  top: 44px !important;
+  top: 48px !important;
+  right: 16px !important;
+  left: auto !important;
+  z-index: 100 !important;
   padding: 6px 10px !important;
 }
 

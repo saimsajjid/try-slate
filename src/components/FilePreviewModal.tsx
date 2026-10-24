@@ -338,6 +338,20 @@ export function FilePreviewModal({
     setLoading(false);
   }, [file]);
 
+  // Listen for messages from the PDF viewer iframe (Close, Download)
+  useEffect(() => {
+    const handleIframeMessage = (e: MessageEvent) => {
+      if (!e.data || typeof e.data !== 'object') return;
+      if (e.data.action === 'closePreview') {
+        onClose();
+      } else if (e.data.action === 'downloadFile' && file) {
+        onDownload(file);
+      }
+    };
+    window.addEventListener('message', handleIframeMessage);
+    return () => window.removeEventListener('message', handleIframeMessage);
+  }, [file, onClose, onDownload]);
+
   // Keyboard controls for modal (Esc or Backspace to close, Arrow keys for gallery, +/- for zoom)
   useEffect(() => {
     if (!file) return;
@@ -411,69 +425,69 @@ export function FilePreviewModal({
         className="bg-[#121214] flex flex-col w-full h-full overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top Header Bar */}
-        <div className="bg-[#141417] border-b border-[#222226] px-4 py-2 flex items-center justify-between gap-3 shrink-0">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span
-              className={`text-[10px] font-mono font-bold px-2 py-0.5 border rounded uppercase shrink-0 ${
-                ext === 'pdf'
-                  ? 'bg-white/[0.06] text-zinc-300 border-white/10'
-                  : ext === 'docx' || ext === 'doc'
-                  ? 'bg-blue-500/15 text-blue-400 border-blue-500/30'
-                  : ext === 'pptx' || ext === 'ppsx'
-                  ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-                  : isCurrentAnImage
-                  ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                  : 'bg-zinc-800 text-zinc-300 border-zinc-700'
-              }`}
-            >
-              {ext}
-            </span>
-            <span className="font-medium text-xs sm:text-sm text-zinc-200 truncate tracking-tight">{file.name}</span>
-            <span className="text-[11px] font-mono text-zinc-500 shrink-0">({file.size})</span>
+        {/* Top Header Bar for non-PDF files (DOCX, PPTX, Images) */}
+        {ext !== 'pdf' && (
+          <div className="bg-[#141417] border-b border-[#222226] px-4 py-2 flex items-center justify-between gap-3 shrink-0">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span
+                className={`text-[10px] font-mono font-bold px-2 py-0.5 border rounded uppercase shrink-0 ${
+                  ext === 'docx' || ext === 'doc'
+                    ? 'bg-blue-500/15 text-blue-400 border-blue-500/30'
+                    : ext === 'pptx' || ext === 'ppsx'
+                    ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                    : isCurrentAnImage
+                    ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                    : 'bg-zinc-800 text-zinc-300 border-zinc-700'
+                }`}
+              >
+                {ext}
+              </span>
+              <span className="font-medium text-xs sm:text-sm text-zinc-200 truncate tracking-tight">{file.name}</span>
+              <span className="text-[11px] font-mono text-zinc-500 shrink-0">({file.size})</span>
 
-            {/* Photo Gallery Counter & Quick Arrows */}
-            {hasImageGallery && (
-              <div className="hidden sm:flex items-center gap-1.5 ml-2 shrink-0">
-                <span className="text-[11px] font-mono font-medium bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded border border-zinc-700">
-                  {currentImageIndex + 1} / {imageFiles.length}
-                </span>
-                <button
-                  onClick={handlePrev}
-                  disabled={!hasPrev}
-                  className="w-6 h-6 rounded border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-xs"
-                  title="Previous Photo (Left Arrow Key)"
-                >
-                  ←
-                </button>
-                <button
-                  onClick={handleNext}
-                  disabled={!hasNext}
-                  className="w-6 h-6 rounded border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-xs"
-                  title="Next Photo (Right Arrow Key)"
-                >
-                  →
-                </button>
-              </div>
-            )}
-          </div>
+              {/* Photo Gallery Counter & Quick Arrows */}
+              {hasImageGallery && (
+                <div className="hidden sm:flex items-center gap-1.5 ml-2 shrink-0">
+                  <span className="text-[11px] font-mono font-medium bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded border border-zinc-700">
+                    {currentImageIndex + 1} / {imageFiles.length}
+                  </span>
+                  <button
+                    onClick={handlePrev}
+                    disabled={!hasPrev}
+                    className="w-6 h-6 rounded border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-xs"
+                    title="Previous Photo (Left Arrow Key)"
+                  >
+                    ←
+                  </button>
+                  <button
+                    onClick={handleNext}
+                    disabled={!hasNext}
+                    className="w-6 h-6 rounded border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-xs"
+                    title="Next Photo (Right Arrow Key)"
+                  >
+                    →
+                  </button>
+                </div>
+              )}
+            </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={() => onDownload(file)}
-              className="h-7 sm:h-8 px-3 rounded-lg text-xs font-medium bg-white/[0.06] hover:bg-white/[0.12] text-zinc-200 hover:text-white border border-white/10 transition-all active:scale-95 flex items-center gap-1.5"
-            >
-              Download
-            </button>
-            <button
-              onClick={onClose}
-              className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.1] border border-transparent hover:border-white/10 flex items-center justify-center text-sm transition-all"
-              title="Close Preview (Esc)"
-            >
-              ✕
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => onDownload(file)}
+                className="h-7 sm:h-8 px-3 rounded-lg text-xs font-medium bg-white/[0.06] hover:bg-white/[0.12] text-zinc-200 hover:text-white border border-white/10 transition-all active:scale-95 flex items-center gap-1.5"
+              >
+                Download
+              </button>
+              <button
+                onClick={onClose}
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.1] border border-transparent hover:border-white/10 flex items-center justify-center text-sm transition-all"
+                title="Close Preview (Esc)"
+              >
+                ✕
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Preview Viewer Body - Zero Horizontal or Vertical Shift */}
         <div className="flex-1 w-full min-h-0 min-w-0 bg-neutral-900 overflow-hidden relative flex flex-col">
@@ -503,12 +517,12 @@ export function FilePreviewModal({
 
           {!loading && !error && (
             <>
-              {/* 1. PDF VIEWER: Mozilla Official PDF.js Web Viewer with Continuous Scroll, Range Streaming & Thumbnails */}
+              {/* 1. PDF VIEWER: Mozilla Official PDF.js Web Viewer with Unified Top Bar, Range Streaming & Thumbnails */}
               {ext === 'pdf' && (
                 <div className="w-full h-full min-w-0 min-h-0 flex-1 overflow-hidden relative block">
                   <iframe
-                    src={`/pdfjs/web/viewer.html?file=${encodeURIComponent(pdfSourceUrl || `${VAULT_STREAM_HOST}${file.url}`)}`}
-                    className="w-full h-full border-none bg-neutral-900 block"
+                    src={`/pdfjs/web/viewer.html?file=${encodeURIComponent(pdfSourceUrl || `${VAULT_STREAM_HOST}${file.url}`)}&title=${encodeURIComponent(file.name)}&size=${encodeURIComponent(file.size || '')}#zoom=page-fit`}
+                    className="w-full h-full border-none bg-[#0A0A0C] block"
                     title={file.name}
                   />
                 </div>
