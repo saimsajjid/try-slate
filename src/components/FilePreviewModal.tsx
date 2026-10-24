@@ -3,6 +3,7 @@ import * as docx from 'docx-preview';
 import { marked } from 'marked';
 import { ReactPptxViewer } from '@extend-ai/react-pptx';
 import '@extend-ai/react-pptx/styles.css';
+import { PdfViewer } from './PdfViewer';
 
 marked.use({
   gfm: true,
@@ -143,10 +144,8 @@ export function FilePreviewModal({
     // Obfuscated Base64 endpoint to completely bypass IDM system-level network interceptor
     const previewStreamUrl = `${VAULT_STREAM_HOST}/api/doc-stream?doc=${encodeURIComponent(btoa(file.url))}`;
 
-    // 1. PDF: Direct HTTP 206 byte-range streaming into native PDF viewer iframe (Instant Page 1 streaming, NO full-file download)
+    // 1. PDF: Handled by dedicated PdfViewer component with strict byte-range streaming
     if (ext === 'pdf') {
-      const directPdfStreamUrl = `${VAULT_STREAM_HOST}${file.url}`;
-      setBlobUrl(directPdfStreamUrl);
       setLoading(false);
       return;
     }
@@ -468,13 +467,12 @@ export function FilePreviewModal({
 
           {!loading && !error && (
             <>
-              {/* 1. PDF VIEWER: In-memory blob: URL in iframe (Full Width & Height, Zero Flex Shift) */}
-              {ext === 'pdf' && blobUrl && (
+              {/* 1. PDF VIEWER: Canvas-based HTTP 206 byte-range streaming viewer (Zero full download) */}
+              {ext === 'pdf' && (
                 <div className="w-full h-full min-w-0 min-h-0 flex-1 overflow-hidden relative block">
-                  <iframe
-                    src={`${blobUrl}#toolbar=1&navpanes=1`}
-                    className="w-full h-full border-none bg-neutral-900 block"
-                    title={file.name}
+                  <PdfViewer
+                    url={`${VAULT_STREAM_HOST}${file.url}`}
+                    fileName={file.name}
                   />
                 </div>
               )}
