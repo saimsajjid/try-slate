@@ -151,6 +151,11 @@ textarea,
   height: calc(100% - 44px) !important;
 }
 
+#sidebarContent {
+  inset-block-start: 0 !important;
+  height: 100% !important;
+}
+
 #viewerContainer {
   background-color: #0A0A0C !important;
   background-image: radial-gradient(circle at 50% 25%, rgba(255, 255, 255, 0.02) 0%, transparent 60%) !important;
@@ -281,6 +286,8 @@ textarea,
 #printButton,
 #openFileButton,
 #secondaryToolbarToggle,
+#toolbarSidebar,
+#viewThumbnail,
 #viewOutline,
 #viewAttachments,
 #viewLayers,
