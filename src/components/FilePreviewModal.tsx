@@ -161,13 +161,11 @@ export function FilePreviewModal({
     setImageZoom(1);
 
     const ext = file.type.toLowerCase();
-    // Obfuscated Base64 endpoint to completely bypass IDM system-level network interceptor
-    const previewStreamUrl = `${VAULT_STREAM_HOST}/api/doc-stream?doc=${encodeURIComponent(btoa(file.url))}`;
+    const targetUrl = file.url.startsWith('http') ? file.url : `${VAULT_STREAM_HOST}${file.url}`;
 
     // 1. PDF: Handled by official Mozilla PDF.js Web Viewer with on-disk offline caching
     if (ext === 'pdf') {
       let isMounted = true;
-      const targetUrl = `${VAULT_STREAM_HOST}${file.url}`;
 
       getPdfFromDisk(targetUrl)
         .then((buffer) => {
@@ -210,7 +208,7 @@ export function FilePreviewModal({
         setLoading(false);
       } else {
         let active = true;
-        fetch(previewStreamUrl)
+        fetch(targetUrl)
           .then((res) => res.blob())
           .then((blob) => {
             if (!active) return;
@@ -222,7 +220,7 @@ export function FilePreviewModal({
           })
           .catch(() => {
             if (!active) return;
-            setBlobUrl(previewStreamUrl);
+            setBlobUrl(targetUrl);
             setLoading(false);
           });
 
@@ -236,8 +234,8 @@ export function FilePreviewModal({
         if (hasNext) {
           const nextFile = imageFiles[currentImageIndex + 1];
           if (!blobCacheRef.current.has(nextFile.url)) {
-            const nextStream = `${VAULT_STREAM_HOST}/api/doc-stream?doc=${encodeURIComponent(btoa(nextFile.url))}`;
-            fetch(nextStream)
+            const nextTarget = nextFile.url.startsWith('http') ? nextFile.url : `${VAULT_STREAM_HOST}${nextFile.url}`;
+            fetch(nextTarget)
               .then((res) => res.blob())
               .then((b) => {
                 const nextExt = nextFile.type.toLowerCase();
@@ -252,8 +250,8 @@ export function FilePreviewModal({
         if (hasPrev) {
           const prevFile = imageFiles[currentImageIndex - 1];
           if (!blobCacheRef.current.has(prevFile.url)) {
-            const prevStream = `${VAULT_STREAM_HOST}/api/doc-stream?doc=${encodeURIComponent(btoa(prevFile.url))}`;
-            fetch(prevStream)
+            const prevTarget = prevFile.url.startsWith('http') ? prevFile.url : `${VAULT_STREAM_HOST}${prevFile.url}`;
+            fetch(prevTarget)
               .then((res) => res.blob())
               .then((b) => {
                 const prevExt = prevFile.type.toLowerCase();
@@ -272,7 +270,7 @@ export function FilePreviewModal({
 
     // 3. Markdown / Text / Code (.md, .txt, .py, .json)
     if (ext === 'md' || ext === 'txt' || ext === 'py' || ext === 'json') {
-      fetch(previewStreamUrl)
+      fetch(targetUrl)
         .then((res) => {
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           return res.text();
@@ -305,7 +303,7 @@ export function FilePreviewModal({
 
     // 4. Word Documents (.docx)
     if (ext === 'docx') {
-      fetch(previewStreamUrl)
+      fetch(targetUrl)
         .then((res) => {
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           return res.arrayBuffer();
@@ -334,7 +332,7 @@ export function FilePreviewModal({
 
     // 5. PowerPoint Presentations (.pptx, .ppsx) - Direct Wasm Presentation Viewer
     if (ext === 'pptx' || ext === 'ppsx') {
-      fetch(previewStreamUrl)
+      fetch(targetUrl)
         .then((res) => {
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           return res.arrayBuffer();
