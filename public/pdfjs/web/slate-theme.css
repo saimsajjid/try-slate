@@ -569,3 +569,199 @@ textarea,
 ::-webkit-scrollbar-thumb:hover {
   background: #3F3F46;
 }
+
+
+/* 12. Slate Document Loading Screen Overlay */
+#slateLoadingOverlay {
+  position: absolute;
+  inset: 0;
+  top: 36px;
+  z-index: 9999;
+  background-color: #0A0A0C;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.28s;
+  pointer-events: auto;
+}
+
+#slateLoadingOverlay.slate-loader-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.slateLoadingCard {
+  background: #141417;
+  border: 1px solid #222226;
+  border-radius: 18px;
+  padding: 32px 28px 24px 28px;
+  max-width: 440px;
+  width: 100%;
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: slateCardEnter 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slateCardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.slateMascotBadge {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slateMascotAura {
+  position: absolute;
+  inset: -6px;
+  border-radius: 22px;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.22) 0%, rgba(245, 158, 11, 0) 70%);
+  animation: slateAuraPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes slateAuraPulse {
+  0%, 100% {
+    transform: scale(0.95);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+.slateMascotSvg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.5));
+  animation: slateMascotBounce 3s ease-in-out infinite;
+  z-index: 2;
+}
+
+@keyframes slateMascotBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.slateEyePupil {
+  animation: slatePupilsLook 4s ease-in-out infinite;
+}
+
+@keyframes slatePupilsLook {
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(1.2px, 0);
+  }
+  75% {
+    transform: translate(-1.2px, 0);
+  }
+}
+
+.slateLoadingTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.slateLoadingNotice {
+  font-size: 12px;
+  line-height: 1.55;
+  color: #A1A1AA;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-top: 8px;
+  margin-bottom: 22px;
+  text-align: left;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.slateNoticeHighlight {
+  color: #F59E0B;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.slateProgressBarTrack {
+  width: 100%;
+  height: 6px;
+  background-color: #222226;
+  border-radius: 9999px;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.slateProgressBarFill {
+  height: 100%;
+  width: 8%;
+  background: linear-gradient(90deg, #D97706, #F59E0B, #FBBF24);
+  border-radius: 9999px;
+  transition: width 0.22s ease-out;
+  position: relative;
+}
+
+.slateProgressBarFill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: slateShimmerBar 1.8s infinite;
+}
+
+@keyframes slateShimmerBar {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.slateProgressMetrics {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.slateStatusText {
+  color: #71717A;
+}
+
+.slatePercentText {
+  color: #F59E0B;
+  font-weight: 700;
+}

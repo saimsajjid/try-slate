@@ -574,11 +574,43 @@ export function FilePreviewModal({
         {/* Preview Viewer Body - Zero Horizontal or Vertical Shift */}
         <div className="flex-1 w-full min-h-0 min-w-0 bg-neutral-900 overflow-hidden relative flex flex-col">
           {loading && (
-            <div className="flex-1 flex flex-col items-center justify-center gap-3">
-              <div className="w-8 h-8 border-3 border-white border-t-transparent rounded-full animate-spin" />
-              <p className="text-xs font-mono text-neutral-400 font-bold">
-                Rendering document preview...
-              </p>
+            <div className="flex-1 flex items-center justify-center p-4 bg-[#0A0A0C]">
+              <div className="bg-[#141417] border border-[#222226] rounded-2xl p-6 sm:p-8 max-w-md w-full flex flex-col items-center text-center shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                {/* Slate Mascot Badge */}
+                <div className="relative w-16 h-16 mb-4 flex items-center justify-center">
+                  <div className="absolute -inset-1.5 rounded-2xl bg-amber-500/20 animate-pulse" />
+                  <svg className="w-full h-full drop-shadow-md animate-bounce duration-1000 relative z-10" viewBox="0 0 64 64" fill="none">
+                    <rect x="2" y="2" width="60" height="60" rx="16" fill="#FFFFFF" stroke="#141414" stroke-width="2.5" />
+                    <rect x="14" y="13" width="36" height="32" rx="12" fill="#141414" />
+                    <circle cx="25" cy="26" r="4.5" fill="#FFFFFF" />
+                    <circle cx="39" cy="26" r="4.5" fill="#FFFFFF" />
+                    <circle cx="26.5" cy="26" r="2" fill="#141414" />
+                    <circle cx="40.5" cy="26" r="2" fill="#141414" />
+                    <circle cx="24" cy="24.5" r="1.2" fill="#FFFFFF" />
+                    <circle cx="38" cy="24.5" r="1.2" fill="#FFFFFF" />
+                    <line x1="26" y1="45" x2="23" y2="52" stroke="#141414" stroke-width="3" stroke-linecap="round" />
+                    <line x1="38" y1="45" x2="41" y2="52" stroke="#141414" stroke-width="3" stroke-linecap="round" />
+                  </svg>
+                </div>
+
+                <h3 className="text-sm sm:text-base font-bold text-white mb-2 truncate max-w-full">
+                  Loading {file.name}
+                </h3>
+
+                <div className="text-xs text-zinc-400 bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 mb-4 leading-relaxed text-left w-full">
+                  <span className="text-amber-400 font-semibold block mb-0.5">First time opening?</span>
+                  It takes a moment to download and save to your device disk. Afterwards, it opens instantly offline.
+                </div>
+
+                <div className="w-full h-1.5 bg-[#222226] rounded-full overflow-hidden relative mb-2.5">
+                  <div className="h-full bg-gradient-to-r from-amber-600 via-amber-400 to-amber-300 rounded-full animate-pulse w-full" />
+                </div>
+
+                <div className="w-full flex justify-between items-center text-[11px] font-mono text-zinc-500">
+                  <span>Saving to offline vault...</span>
+                  <span className="text-amber-400 font-bold">{file.size}</span>
+                </div>
+              </div>
             </div>
           )}
 

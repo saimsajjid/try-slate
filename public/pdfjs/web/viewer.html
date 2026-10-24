@@ -427,6 +427,42 @@ See https://github.com/adobe-type-tools/cmap-resources
           </div>
         </div>
 
+        <!-- Slate Centered Document Loading Screen Overlay -->
+        <div id="slateLoadingOverlay" class="slateLoadingOverlay">
+          <div class="slateLoadingCard">
+            <div class="slateMascotBadge">
+              <div class="slateMascotAura"></div>
+              <svg class="slateMascotSvg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="2" width="60" height="60" rx="16" fill="#FFFFFF" stroke="#141414" stroke-width="2.5" />
+                <rect x="14" y="13" width="36" height="32" rx="12" fill="#141414" />
+                <circle cx="25" cy="26" r="4.5" fill="#FFFFFF" />
+                <circle cx="39" cy="26" r="4.5" fill="#FFFFFF" />
+                <circle class="slateEyePupil" cx="26.5" cy="26" r="2" fill="#141414" />
+                <circle class="slateEyePupil" cx="40.5" cy="26" r="2" fill="#141414" />
+                <circle cx="24" cy="24.5" r="1.2" fill="#FFFFFF" />
+                <circle cx="38" cy="24.5" r="1.2" fill="#FFFFFF" />
+                <line x1="26" y1="45" x2="23" y2="52" stroke="#141414" stroke-width="3" stroke-linecap="round" />
+                <line x1="38" y1="45" x2="41" y2="52" stroke="#141414" stroke-width="3" stroke-linecap="round" />
+              </svg>
+            </div>
+
+            <div class="slateLoadingTitle" id="slateLoadingDocTitle">Loading Document...</div>
+            <div class="slateLoadingNotice">
+              <span class="slateNoticeHighlight">First time opening?</span>
+              It takes a moment to download and save to your device disk. Afterwards, it opens instantly offline.
+            </div>
+
+            <div class="slateProgressBarTrack">
+              <div class="slateProgressBarFill" id="slateProgressFill"></div>
+            </div>
+
+            <div class="slateProgressMetrics">
+              <span class="slateStatusText" id="slateStatusText">Connecting &amp; caching...</span>
+              <span class="slatePercentText" id="slatePercentText">0%</span>
+            </div>
+          </div>
+        </div>
+
         <div id="viewerContainer" tabindex="0">
           <div id="viewer" class="pdfViewer"></div>
         </div>
@@ -684,6 +720,8 @@ See https://github.com/adobe-type-tools/cmap-resources
               titleEl.title = title;
             }
             document.title = title;
+            const initTitle = document.getElementById('slateLoadingDocTitle');
+            if (initTitle) initTitle.textContent = 'Loading ' + title;
             window.addEventListener('pagesloaded', function() {
               try {
                 if (window.PDFViewerApplication) {
@@ -698,9 +736,96 @@ See https://github.com/adobe-type-tools/cmap-resources
             const sizeEl = document.getElementById('docSize');
             if (sizeEl) {
               sizeEl.textContent = '(' + size + ')';
+              const initStatus = document.getElementById('slateStatusText');
+              if (initStatus) initStatus.textContent = 'Streaming ' + size + '...';
             }
           }
         } catch (e) {}
+
+        // Slate Document Loading Overlay Controller
+        const slateOverlay = document.getElementById('slateLoadingOverlay');
+        const slateFill = document.getElementById('slateProgressFill');
+        const slatePctEl = document.getElementById('slatePercentText');
+        const slateStatusEl = document.getElementById('slateStatusText');
+
+        function hideSlateLoader() {
+          if (!slateOverlay || slateOverlay.classList.contains('slate-loader-hidden')) return;
+          slateOverlay.classList.add('slate-loader-hidden');
+          setTimeout(function() {
+            slateOverlay.style.display = 'none';
+          }, 350);
+        }
+
+        function updateSlateProgress(pct, customStatus) {
+          const boundedPct = Math.min(100, Math.max(0, pct));
+          if (slateFill) slateFill.style.width = boundedPct + '%';
+          if (slatePctEl) slatePctEl.textContent = boundedPct + '%';
+          if (slateStatusEl) {
+            if (customStatus) {
+              slateStatusEl.textContent = customStatus;
+            } else if (boundedPct < 25) {
+              slateStatusEl.textContent = 'Streaming document bytes...';
+            } else if (boundedPct < 75) {
+              slateStatusEl.textContent = 'Downloading and caching...';
+            } else if (boundedPct < 100) {
+              slateStatusEl.textContent = 'Saving to device disk...';
+            } else {
+              slateStatusEl.textContent = 'Compiling and rendering pages...';
+            }
+          }
+        }
+
+        function hookSlatePdfEvents() {
+          if (!window.PDFViewerApplication) return;
+          const app = window.PDFViewerApplication;
+
+          if (app.initializedPromise) {
+            app.initializedPromise.then(function() {
+              if (app.eventBus) {
+                app.eventBus.on('pagerendered', function(evt) {
+                  if (evt.pageNumber === 1) {
+                    hideSlateLoader();
+                  }
+                });
+                app.eventBus.on('pagesloaded', function() {
+                  setTimeout(hideSlateLoader, 200);
+                });
+                app.eventBus.on('documentloaded', function() {
+                  setTimeout(hideSlateLoader, 400);
+                });
+              }
+            });
+          }
+
+          const origProgress = app.progress ? app.progress.bind(app) : null;
+          if (origProgress) {
+            app.progress = function(level) {
+              origProgress(level);
+              const pct = Math.round(level * 100);
+              if (!isNaN(pct) && pct > 0) {
+                updateSlateProgress(pct);
+              }
+            };
+          }
+        }
+
+        if (window.PDFViewerApplication && window.PDFViewerApplication.initialized) {
+          hookSlatePdfEvents();
+        } else {
+          document.addEventListener('webviewerloaded', hookSlatePdfEvents);
+        }
+
+        const slatePollInterval = setInterval(function() {
+          const page1 = document.querySelector('.page[data-page-number="1"] canvas');
+          if (page1) {
+            clearInterval(slatePollInterval);
+            hideSlateLoader();
+          }
+        }, 80);
+
+        setTimeout(function() {
+          clearInterval(slatePollInterval);
+        }, 45000);
 
         const closeBtn = document.getElementById('closeButton');
         if (closeBtn) {
