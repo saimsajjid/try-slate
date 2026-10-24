@@ -3,15 +3,15 @@
 
 :root {
   --main-color: #F4F4F5 !important;
-  --body-bg-color: #0F0F12 !important;
-  --toolbar-bg-color: #161619 !important;
-  --toolbar-border-color: #27272A !important;
+  --body-bg-color: #0A0A0C !important;
+  --toolbar-bg-color: #141417 !important;
+  --toolbar-border-color: #222226 !important;
   --toolbar-height: 40px !important;
-  --sidebar-narrow-bg-color: #121215 !important;
-  --sidebar-toolbar-bg-color: #161619 !important;
-  --doorhanger-bg-color: #1A1A1E !important;
+  --sidebar-narrow-bg-color: #101013 !important;
+  --sidebar-toolbar-bg-color: #141417 !important;
+  --doorhanger-bg-color: #18181C !important;
   --doorhanger-border-color: #27272A !important;
-  --field-bg-color: #121215 !important;
+  --field-bg-color: #101013 !important;
   --field-border-color: #2E2E33 !important;
   --field-color: #F4F4F5 !important;
   --button-hover-color: rgba(255, 255, 255, 0.08) !important;
@@ -21,7 +21,7 @@
   --progressBar-bg-color: #27272A !important;
   --progressBar-blend-color: #FBBF24 !important;
   --scrollbar-color: #3F3F46 !important;
-  --scrollbar-bg-color: #0F0F12 !important;
+  --scrollbar-bg-color: #0A0A0C !important;
 }
 
 body,
@@ -42,13 +42,13 @@ textarea,
   font-family: 'JetBrains Mono', monospace !important;
 }
 
-/* 1. Global Layout & Alignment - Zero Congestion */
+/* 1. Global Layout & Structural Alignment - Zero Congestion */
 #toolbarContainer,
 #toolbarSidebar {
   height: 40px !important;
-  background-color: #161619 !important;
-  border-bottom: 1px solid #27272A !important;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4) !important;
+  background-color: #141417 !important;
+  border-bottom: 1px solid #222226 !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3) !important;
 }
 
 #toolbarViewer {
@@ -59,14 +59,15 @@ textarea,
 }
 
 #sidebarContainer {
-  background-color: #121215 !important;
-  border-right: 1px solid #27272A !important;
+  background-color: #101013 !important;
+  border-right: 1px solid #222226 !important;
   inset-block-start: 40px !important; /* Perfect alignment with main toolbar */
   height: calc(100% - 40px) !important;
 }
 
 #viewerContainer {
-  background-color: #0F0F12 !important;
+  background-color: #0A0A0C !important;
+  background-image: radial-gradient(circle at 50% 25%, rgba(255, 255, 255, 0.02) 0%, transparent 60%) !important;
   inset-block-start: 40px !important;
   height: calc(100% - 40px) !important;
 }
@@ -100,7 +101,7 @@ textarea,
 
 /* 3. Page Controls & Inputs */
 #pageNumber {
-  background-color: #121215 !important;
+  background-color: #101013 !important;
   color: #F4F4F5 !important;
   border: 1px solid #2E2E33 !important;
   border-radius: 6px !important;
@@ -123,7 +124,7 @@ textarea,
 
 /* 4. Zoom Dropdown */
 .dropdownToolbarButton select {
-  background-color: #121215 !important;
+  background-color: #101013 !important;
   color: #F4F4F5 !important;
   border: 1px solid #2E2E33 !important;
   border-radius: 6px !important;
@@ -137,29 +138,31 @@ textarea,
 }
 
 .dropdownToolbarButton select option {
-  background-color: #18181B !important;
+  background-color: #141417 !important;
   color: #F4F4F5 !important;
 }
 
-/* 5. Clean up clutter buttons */
+/* 5. Clean up clutter buttons & irrelevant sidebar tabs */
 #editorModeButtons,
 #editorModeSeparator,
 #printButton,
 #downloadButton,
 #openFileButton,
-#secondaryToolbarToggle {
+#secondaryToolbarToggle,
+#viewAttachments,
+#viewLayers {
   display: none !important;
 }
 
 /* 6. Thumbnails */
 .thumbnail {
-  margin: 10px 8px !important;
+  margin: 12px 10px !important;
 }
 
 .thumbnailImage {
-  border: 1.5px solid #27272A !important;
+  border: 1.5px solid #222226 !important;
   border-radius: 4px !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
   transition: all 0.15s ease !important;
 }
 
@@ -204,15 +207,15 @@ textarea,
 
 /* 8. Document Viewport & Pages */
 .page {
-  margin: 18px auto !important;
-  border-radius: 2px !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 1px 4px rgba(0, 0, 0, 0.4) !important;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  margin: 24px auto !important;
+  border-radius: 4px !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7), 0 2px 6px rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
 }
 
 /* 9. Find Bar (Ctrl+F) */
 #findbar {
-  background-color: #18181B !important;
+  background-color: #141417 !important;
   border: 1px solid #27272A !important;
   border-radius: 8px !important;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
@@ -221,7 +224,7 @@ textarea,
 }
 
 #findInput {
-  background-color: #121215 !important;
+  background-color: #101013 !important;
   color: #FFFFFF !important;
   border: 1px solid #2E2E33 !important;
   border-radius: 6px !important;
@@ -247,11 +250,11 @@ textarea,
 }
 
 ::-webkit-scrollbar-track {
-  background: #0F0F12;
+  background: #0A0A0C;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #27272A;
+  background: #222226;
   border-radius: 3px;
 }
 
