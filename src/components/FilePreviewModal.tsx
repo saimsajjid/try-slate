@@ -143,32 +143,12 @@ export function FilePreviewModal({
     // Obfuscated Base64 endpoint to completely bypass IDM system-level network interceptor
     const previewStreamUrl = `${VAULT_STREAM_HOST}/api/doc-stream?doc=${encodeURIComponent(btoa(file.url))}`;
 
-    // 1. PDF: stream binary through obfuscated endpoint and create RAM blob URL
+    // 1. PDF: Direct HTTP 206 byte-range streaming into native PDF viewer iframe (Instant Page 1 streaming, NO full-file download)
     if (ext === 'pdf') {
-      let active = true;
-      let createdBlobUrl: string | null = null;
-      fetch(previewStreamUrl)
-        .then((res) => {
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          return res.blob();
-        })
-        .then((blob) => {
-          if (!active) return;
-          const pdfBlob = new Blob([blob], { type: 'application/pdf' });
-          createdBlobUrl = URL.createObjectURL(pdfBlob);
-          setBlobUrl(createdBlobUrl);
-          setLoading(false);
-        })
-        .catch((err) => {
-          if (!active) return;
-          setError(`Unable to stream PDF: ${err.message}`);
-          setLoading(false);
-        });
-
-      return () => {
-        active = false;
-        if (createdBlobUrl) URL.revokeObjectURL(createdBlobUrl);
-      };
+      const directPdfStreamUrl = `${VAULT_STREAM_HOST}${file.url}`;
+      setBlobUrl(directPdfStreamUrl);
+      setLoading(false);
+      return;
     }
 
     // 2. Images: Lightbox preview with fast RAM blob cache & preloading
