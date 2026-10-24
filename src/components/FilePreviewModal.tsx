@@ -58,6 +58,9 @@ export function FilePreviewModal({
   // Image zoom state
   const [imageZoom, setImageZoom] = useState(1);
 
+  // PDF iframe ref
+  const pdfIframeRef = useRef<HTMLIFrameElement>(null);
+
   // DOCX container ref
   const docxContainerRef = useRef<HTMLDivElement>(null);
 
@@ -92,6 +95,19 @@ export function FilePreviewModal({
 
   const ext = file ? file.type.toLowerCase() : '';
   const isCurrentAnImage = isImage(ext);
+
+  // Auto-focus PDF iframe so arrow keys immediately scroll pages without requiring a center click
+  useEffect(() => {
+    if (ext === 'pdf') {
+      const timer = setTimeout(() => {
+        try {
+          pdfIframeRef.current?.contentWindow?.focus();
+          pdfIframeRef.current?.focus();
+        } catch (e) {}
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [ext, file, pdfSourceUrl]);
 
   // Gallery context for navigating images in the same folder
   const imageFiles = (folderFiles || []).filter((f) => isImage(f.type));
@@ -363,6 +379,17 @@ export function FilePreviewModal({
         return;
       }
 
+      // For multi-page documents (PDF, DOCX, PPTX), do NOT hijack Arrow keys to change files!
+      if (ext === 'pdf' || ext === 'docx' || ext === 'pptx') {
+        if (ext === 'pdf' && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', ' '].includes(e.key)) {
+          try {
+            pdfIframeRef.current?.contentWindow?.focus();
+            pdfIframeRef.current?.focus();
+          } catch (err) {}
+        }
+        return;
+      }
+
       // Arrow navigation for files and photo galleries
       if (e.key === 'ArrowLeft') {
         if (isCurrentAnImage && hasImageGallery && hasPrev) {
@@ -521,6 +548,13 @@ export function FilePreviewModal({
               {ext === 'pdf' && (
                 <div className="w-full h-full min-w-0 min-h-0 flex-1 overflow-hidden relative block">
                   <iframe
+                    ref={pdfIframeRef}
+                    onLoad={() => {
+                      try {
+                        pdfIframeRef.current?.contentWindow?.focus();
+                        pdfIframeRef.current?.focus();
+                      } catch (e) {}
+                    }}
                     src={`/pdfjs/web/viewer.html?file=${encodeURIComponent(pdfSourceUrl || `${VAULT_STREAM_HOST}${file.url}`)}&title=${encodeURIComponent(file.name)}&size=${encodeURIComponent(file.size || '')}#zoom=page-fit`}
                     className="w-full h-full border-none bg-[#0A0A0C] block"
                     title={file.name}

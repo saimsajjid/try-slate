@@ -689,6 +689,8 @@ See https://github.com/adobe-type-tools/cmap-resources
                 if (window.PDFViewerApplication) {
                   window.PDFViewerApplication._contentDispositionFilename = title;
                 }
+                window.focus();
+                document.body.focus();
               } catch (e) {}
             });
           }
