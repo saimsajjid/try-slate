@@ -3,6 +3,7 @@ import * as docx from 'docx-preview';
 import { marked } from 'marked';
 import { ReactPptxViewer } from '@extend-ai/react-pptx';
 import '@extend-ai/react-pptx/styles.css';
+import { DocumentReader } from './DocumentReader';
 
 marked.use({
   gfm: true,
@@ -364,6 +365,28 @@ export function FilePreviewModal({
   ]);
 
   if (!file) return null;
+
+  if (ext === 'pdf') {
+    return (
+      <div
+        className="fixed inset-0 z-50 bg-[#121214] flex flex-col w-screen h-screen select-none overflow-hidden animate-in fade-in duration-100"
+        onClick={onClose}
+      >
+        <div
+          className="w-full h-full overflow-hidden flex flex-col"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <DocumentReader
+            fileUrl={file.url}
+            fileName={file.name}
+            fileSize={file.size}
+            onDownload={() => onDownload(file)}
+            onClose={onClose}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
