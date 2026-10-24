@@ -36,9 +36,7 @@ textarea,
 
 #pageNumber,
 #numPages,
-#scaleSelect,
-.toolbarField,
-.dropdownToolbarButton select {
+.toolbarField {
   font-family: 'JetBrains Mono', monospace !important;
 }
 
@@ -286,25 +284,91 @@ textarea,
   padding: 0 4px !important;
 }
 
-/* 4. Zoom Dropdown */
-.dropdownToolbarButton select {
+/* 4. Zoom Dropdown Menu */
+#scaleSelectContainer.dropdownToolbarButton {
+  min-width: 128px !important;
   height: 28px !important;
-  background-color: #101013 !important;
-  color: #F4F4F5 !important;
-  border: 1px solid #2E2E33 !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
   border-radius: 6px !important;
-  padding: 0 20px 0 8px !important;
+  box-shadow: none !important;
+  transition: all 0.15s ease !important;
+  position: relative !important;
+}
+
+#scaleSelectContainer.dropdownToolbarButton:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+}
+
+#scaleSelectContainer.dropdownToolbarButton:focus-within {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15) !important;
+}
+
+.dropdownToolbarButton select,
+#scaleSelect {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
   font-size: 12px !important;
-}
-
-.dropdownToolbarButton select:focus {
-  border-color: #F59E0B !important;
-  outline: none !important;
-}
-
-.dropdownToolbarButton select option {
-  background-color: #141417 !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.01em !important;
+  height: 28px !important;
   color: #F4F4F5 !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 0 28px 0 10px !important;
+  outline: none !important;
+  cursor: pointer !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+}
+
+.dropdownToolbarButton select:focus,
+#scaleSelect:focus {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.dropdownToolbarButton::after {
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  inset-inline-end: 8px !important;
+  opacity: 0.6 !important;
+  pointer-events: none !important;
+  transition: opacity 0.15s ease !important;
+}
+
+.dropdownToolbarButton:hover::after,
+.dropdownToolbarButton:focus-within::after {
+  opacity: 1 !important;
+}
+
+.dropdownToolbarButton select option,
+#scaleSelect option {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  background-color: #18181C !important;
+  color: #E4E4E7 !important;
+  padding: 6px 12px !important;
+  border: none !important;
+}
+
+.dropdownToolbarButton select option:checked,
+#scaleSelect option:checked {
+  background-color: #27272A !important;
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+}
+
+.dropdownToolbarButton select option:hover,
+#scaleSelect option:hover {
+  background-color: #2E2E33 !important;
+  color: #FFFFFF !important;
 }
 
 /* 5. Clean up clutter buttons & irrelevant sidebar tabs */
