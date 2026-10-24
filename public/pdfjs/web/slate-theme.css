@@ -164,11 +164,18 @@ textarea,
 /* 2. Refined, Minimalist Buttons */
 .toolbarButton,
 .secondaryToolbarButton {
+  width: 28px !important;
+  height: 28px !important;
+  aspect-ratio: auto !important;
+  padding: 0 !important;
   border-radius: 6px !important;
   margin: 0 1px !important;
   border: 1px solid transparent !important;
   background-color: transparent !important;
   color: #A1A1AA !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   transition: all 0.15s ease !important;
 }
 
@@ -181,10 +188,15 @@ textarea,
 
 .toolbarButton.toggled,
 .splitToolbarButton.toggled > .toolbarButton {
-  background-color: rgba(255, 255, 255, 0.08) !important;
-  border-color: rgba(255, 255, 255, 0.15) !important;
+  background-color: rgba(255, 255, 255, 0.09) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
   color: #FFFFFF !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) !important;
+  box-shadow: none !important;
+}
+
+.toolbarButton.toggled::before,
+.splitToolbarButton.toggled > .toolbarButton::before {
+  background-color: #FFFFFF !important;
 }
 
 /* Download & Close Action Buttons */
@@ -194,6 +206,7 @@ textarea,
 }
 
 #downloadButton.labeledButton {
+  width: auto !important;
   height: 28px !important;
   padding: 0 10px !important;
   border-radius: 6px !important;
