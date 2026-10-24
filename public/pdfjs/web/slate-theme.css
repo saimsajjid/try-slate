@@ -190,6 +190,11 @@ textarea,
 }
 
 /* Download & Close Action Buttons */
+#downloadButton::before {
+  display: none !important;
+  content: none !important;
+}
+
 #downloadButton.labeledButton {
   height: 28px !important;
   padding: 0 10px !important;
@@ -201,6 +206,7 @@ textarea,
   color: #E4E4E7 !important;
   display: inline-flex !important;
   align-items: center !important;
+  justify-content: center !important;
   gap: 6px !important;
   cursor: pointer !important;
   transition: all 0.15s ease !important;
@@ -212,11 +218,27 @@ textarea,
   color: #FFFFFF !important;
 }
 
+#downloadButton.labeledButton > span {
+  display: inline-block !important;
+  width: auto !important;
+  height: auto !important;
+  overflow: visible !important;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: inherit !important;
+}
+
+#closeButton::before,
+.closeHeaderButton::before {
+  display: none !important;
+  content: none !important;
+}
+
 #closeButton.closeHeaderButton {
   width: 28px !important;
   height: 28px !important;
   border-radius: 6px !important;
-  font-size: 13px !important;
   background-color: transparent !important;
   border: 1px solid transparent !important;
   color: #A1A1AA !important;
@@ -225,12 +247,17 @@ textarea,
   justify-content: center !important;
   cursor: pointer !important;
   transition: all 0.15s ease !important;
+  padding: 0 !important;
 }
 
 #closeButton.closeHeaderButton:hover {
   background-color: rgba(255, 255, 255, 0.1) !important;
   border-color: rgba(255, 255, 255, 0.15) !important;
   color: #FFFFFF !important;
+}
+
+.verticalToolbarSeparator {
+  display: none !important;
 }
 
 /* 3. Page Controls & Inputs */
