@@ -3,6 +3,7 @@ import { FilePreviewModal, type PreviewFile } from './components/FilePreviewModa
 import { FolderIllustration } from './components/FolderIllustration';
 import { FileIllustration } from './components/FileIllustration';
 import { RecommendationView } from './components/RecommendationView';
+import { getPdfFromDisk, getTextFromDisk } from './services/academicCache';
 
 // Type definitions for Recursive JSON Tree
 interface FileItem {
@@ -2327,10 +2328,41 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 2000);
   };
 
-  const handleDownload = (file: { name: string; url: string }) => {
+  const handleDownload = async (file: { name: string; url: string }) => {
     triggerToast(`Downloading ${file.name}`);
     const host = import.meta.env.PROD ? 'https://api.tryaudrio.app' : '';
     const fullUrl = file.url.startsWith('http') ? file.url : `${host}${file.url}`;
+
+    try {
+      const cachedPdf = await getPdfFromDisk(fullUrl);
+      if (cachedPdf) {
+        const blob = new Blob([cachedPdf], { type: 'application/pdf' });
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = file.name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+        return;
+      }
+
+      const cachedText = await getTextFromDisk(fullUrl);
+      if (cachedText) {
+        const blob = new Blob([cachedText], { type: 'text/plain;charset=utf-8' });
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = file.name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+        return;
+      }
+    } catch (e) {}
+
     const a = document.createElement('a');
     a.href = fullUrl;
     a.download = file.name;

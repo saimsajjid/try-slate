@@ -161,6 +161,104 @@ export async function savePdfToDisk(url: string, data: ArrayBuffer): Promise<voi
 }
 
 /**
+ * Read text content (Markdown, Plain text, Code) directly from local device disk
+ */
+export async function getTextFromDisk(url: string): Promise<string | null> {
+  if (typeof window === 'undefined') return null;
+
+  // 1. Primary: Cache API
+  if ('caches' in window) {
+    try {
+      const cache = await caches.open(CACHE_NAME);
+      const match = await cache.match(url, { ignoreSearch: true });
+      if (match) {
+        return await match.text();
+      }
+    } catch (e) {
+      console.warn('Cache API text read error, trying IndexedDB:', e);
+    }
+  }
+
+  // 2. Fallback: IndexedDB
+  if ('indexedDB' in window) {
+    try {
+      const db = await openIndexedDb();
+      return new Promise<string | null>((resolve) => {
+        const tx = db.transaction(IDB_STORE, 'readonly');
+        const store = tx.objectStore(IDB_STORE);
+        const req = store.get(url);
+        req.onsuccess = () => {
+          const val = req.result;
+          if (typeof val === 'string') {
+            resolve(val);
+          } else if (val instanceof Blob) {
+            val.text().then(resolve).catch(() => resolve(null));
+          } else if (val instanceof ArrayBuffer) {
+            const decoded = new TextDecoder('utf-8').decode(val);
+            resolve(decoded);
+          } else {
+            resolve(null);
+          }
+        };
+        req.onerror = () => resolve(null);
+      });
+    } catch (e) {
+      console.warn('IndexedDB text read error:', e);
+      return null;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Save text content (Markdown, Plain text, Code) directly to local device disk
+ */
+export async function saveTextToDisk(url: string, text: string): Promise<void> {
+  if (typeof window === 'undefined') return;
+
+  const encoder = new TextEncoder();
+  const encoded = encoder.encode(text);
+
+  // 1. Primary: Cache API
+  if ('caches' in window) {
+    try {
+      const cache = await caches.open(CACHE_NAME);
+      const response = new Response(text, {
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Content-Length': String(encoded.byteLength),
+          'X-Slate-Cached-At': new Date().toISOString()
+        }
+      });
+      await cache.put(url, response);
+      return;
+    } catch (e) {
+      console.warn('Failed saving text to Cache API, attempting IndexedDB fallback:', e);
+    }
+  }
+
+  // 2. Fallback: IndexedDB
+  if ('indexedDB' in window) {
+    try {
+      const db = await openIndexedDb();
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        const store = tx.objectStore(IDB_STORE);
+        const req = store.put(text, url);
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+      });
+    } catch (e) {
+      console.error('Failed saving text to local disk cache:', e);
+    }
+  }
+}
+
+export const isTextOnDisk = isPdfOnDisk;
+export const deleteTextFromDisk = deletePdfFromDisk;
+
+/**
  * Delete a specific cached document from disk
  */
 export async function deletePdfFromDisk(url: string): Promise<boolean> {

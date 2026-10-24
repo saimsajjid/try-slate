@@ -3,7 +3,7 @@ import * as docx from 'docx-preview';
 import { marked } from 'marked';
 import { ReactPptxViewer } from '@extend-ai/react-pptx';
 import '@extend-ai/react-pptx/styles.css';
-import { getPdfFromDisk, savePdfToDisk } from '../services/academicCache';
+import { getPdfFromDisk, savePdfToDisk, getTextFromDisk, saveTextToDisk } from '../services/academicCache';
 
 marked.use({
   gfm: true,
@@ -268,37 +268,94 @@ export function FilePreviewModal({
       return;
     }
 
-    // 3. Markdown / Text / Code (.md, .txt, .py, .json)
+    // 3. Markdown / Text / Code (.md, .txt, .py, .json) with persistent on-disk offline caching
     if (ext === 'md' || ext === 'txt' || ext === 'py' || ext === 'json') {
-      fetch(targetUrl)
-        .then((res) => {
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          return res.text();
-        })
-        .then((text) => {
-          if (ext === 'md') {
-            const parsed = marked.parse(text);
-            if (typeof parsed === 'string') {
-              setMarkdownHtml(parsed);
-            } else {
-              parsed.then((h) => setMarkdownHtml(h));
-            }
+      let isMounted = true;
+
+      const renderContent = (rawText: string) => {
+        if (!isMounted) return;
+        if (ext === 'md') {
+          const parsed = marked.parse(rawText);
+          if (typeof parsed === 'string') {
+            setMarkdownHtml(parsed);
           } else {
-            const escaped = text
-              .replace(/&/g, '&amp;')
-              .replace(/</g, '&lt;')
-              .replace(/>/g, '&gt;');
-            setMarkdownHtml(
-              `<pre class="font-mono text-xs leading-relaxed p-4 bg-[#141414] text-neutral-100 rounded-xl overflow-x-auto border-2 border-[#141414]"><code>${escaped}</code></pre>`
-            );
+            parsed.then((h) => {
+              if (isMounted) setMarkdownHtml(h);
+            });
           }
-          setLoading(false);
+        } else {
+          const escaped = rawText
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+          setMarkdownHtml(
+            `<pre class="font-mono text-xs leading-relaxed p-4 bg-[#141414] text-neutral-100 rounded-xl overflow-x-auto border-2 border-[#141414]"><code>${escaped}</code></pre>`
+          );
+        }
+        setLoading(false);
+      };
+
+      // Check persistent disk cache first (instant offline loading)
+      getTextFromDisk(targetUrl)
+        .then((cachedText) => {
+          if (!isMounted) return;
+          if (cachedText) {
+            renderContent(cachedText);
+
+            // Revalidate in background when online to catch upstream edits
+            fetch(targetUrl)
+              .then((res) => (res.ok ? res.text() : null))
+              .then((freshText) => {
+                if (!isMounted || !freshText) return;
+                if (freshText !== cachedText) {
+                  renderContent(freshText);
+                  saveTextToDisk(targetUrl, freshText);
+                }
+              })
+              .catch(() => {
+                // Offline: cached note is already rendered
+              });
+          } else {
+            // Not yet in on-disk cache: fetch from network and save to disk
+            fetch(targetUrl)
+              .then((res) => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.text();
+              })
+              .then((text) => {
+                if (!isMounted) return;
+                renderContent(text);
+                saveTextToDisk(targetUrl, text);
+              })
+              .catch((err) => {
+                if (!isMounted) return;
+                setError(`Unable to load note: ${err.message}`);
+                setLoading(false);
+              });
+          }
         })
-        .catch((err) => {
-          setError(`Unable to load note: ${err.message}`);
-          setLoading(false);
+        .catch(() => {
+          if (!isMounted) return;
+          fetch(targetUrl)
+            .then((res) => {
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+              return res.text();
+            })
+            .then((text) => {
+              if (!isMounted) return;
+              renderContent(text);
+              saveTextToDisk(targetUrl, text);
+            })
+            .catch((err) => {
+              if (!isMounted) return;
+              setError(`Unable to load note: ${err.message}`);
+              setLoading(false);
+            });
         });
-      return;
+
+      return () => {
+        isMounted = false;
+      };
     }
 
     // 4. Word Documents (.docx)
