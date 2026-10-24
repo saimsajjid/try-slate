@@ -3,7 +3,6 @@ import * as docx from 'docx-preview';
 import { marked } from 'marked';
 import { ReactPptxViewer } from '@extend-ai/react-pptx';
 import '@extend-ai/react-pptx/styles.css';
-import { PdfViewer } from './PdfViewer';
 
 marked.use({
   gfm: true,
@@ -467,12 +466,13 @@ export function FilePreviewModal({
 
           {!loading && !error && (
             <>
-              {/* 1. PDF VIEWER: Canvas-based HTTP 206 byte-range streaming viewer (Zero full download) */}
+              {/* 1. PDF VIEWER: Mozilla Official PDF.js Web Viewer with Continuous Scroll, Range Streaming & Thumbnails */}
               {ext === 'pdf' && (
                 <div className="w-full h-full min-w-0 min-h-0 flex-1 overflow-hidden relative block">
-                  <PdfViewer
-                    url={`${VAULT_STREAM_HOST}${file.url}`}
-                    fileName={file.name}
+                  <iframe
+                    src={`/pdfjs/web/viewer.html?file=${encodeURIComponent(`${VAULT_STREAM_HOST}${file.url}`)}`}
+                    className="w-full h-full border-none bg-neutral-900 block"
+                    title={file.name}
                   />
                 </div>
               )}
