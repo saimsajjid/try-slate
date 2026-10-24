@@ -181,10 +181,10 @@ textarea,
 
 .toolbarButton.toggled,
 .splitToolbarButton.toggled > .toolbarButton {
-  background-color: rgba(255, 255, 255, 0.14) !important;
-  border-color: rgba(255, 255, 255, 0.22) !important;
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
   color: #FFFFFF !important;
-  box-shadow: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) !important;
 }
 
 /* Download & Close Action Buttons */
@@ -284,91 +284,156 @@ textarea,
   padding: 0 4px !important;
 }
 
-/* 4. Zoom Dropdown Menu */
+/* 4. Zoom Dropdown Menu (Custom HTML Floating Dropdown) */
 #scaleSelectContainer.dropdownToolbarButton {
-  min-width: 128px !important;
-  height: 28px !important;
-  background-color: rgba(255, 255, 255, 0.05) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: 6px !important;
-  box-shadow: none !important;
-  transition: all 0.15s ease !important;
+  min-width: 0 !important;
+  height: auto !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
   position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
 }
 
-#scaleSelectContainer.dropdownToolbarButton:hover {
-  background-color: rgba(255, 255, 255, 0.08) !important;
-  border-color: rgba(255, 255, 255, 0.18) !important;
+#scaleSelectContainer.dropdownToolbarButton::after {
+  display: none !important;
+  content: none !important;
 }
 
-#scaleSelectContainer.dropdownToolbarButton:focus-within {
-  background-color: rgba(255, 255, 255, 0.08) !important;
-  border-color: rgba(255, 255, 255, 0.25) !important;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15) !important;
+.customDropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
 }
 
-.dropdownToolbarButton select,
-#scaleSelect {
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
-  font-size: 12px !important;
-  font-weight: 500 !important;
-  letter-spacing: -0.01em !important;
-  height: 28px !important;
-  color: #F4F4F5 !important;
-  background-color: transparent !important;
-  border: none !important;
-  border-radius: 6px !important;
-  padding: 0 28px 0 10px !important;
-  outline: none !important;
-  cursor: pointer !important;
-  appearance: none !important;
-  -webkit-appearance: none !important;
-  -moz-appearance: none !important;
+.customDropdownTrigger {
+  height: 28px;
+  min-width: 120px;
+  padding: 0 10px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #F4F4F5;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
 }
 
-.dropdownToolbarButton select:focus,
-#scaleSelect:focus {
-  outline: none !important;
-  border: none !important;
-  box-shadow: none !important;
+.customDropdownTrigger:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #FFFFFF;
 }
 
-.dropdownToolbarButton::after {
-  top: 50% !important;
-  transform: translateY(-50%) !important;
-  inset-inline-end: 8px !important;
-  opacity: 0.6 !important;
-  pointer-events: none !important;
-  transition: opacity 0.15s ease !important;
+.customDropdownTrigger[aria-expanded="true"] {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);
 }
 
-.dropdownToolbarButton:hover::after,
-.dropdownToolbarButton:focus-within::after {
-  opacity: 1 !important;
+.dropdownChevron {
+  stroke: #A1A1AA;
+  transition: transform 0.2s ease, stroke 0.15s ease;
+  flex-shrink: 0;
 }
 
-.dropdownToolbarButton select option,
-#scaleSelect option {
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
-  font-size: 12px !important;
-  font-weight: 500 !important;
-  background-color: #18181C !important;
-  color: #E4E4E7 !important;
-  padding: 6px 12px !important;
-  border: none !important;
+.customDropdownTrigger:hover .dropdownChevron {
+  stroke: #FFFFFF;
 }
 
-.dropdownToolbarButton select option:checked,
-#scaleSelect option:checked {
-  background-color: #27272A !important;
-  color: #FFFFFF !important;
-  font-weight: 600 !important;
+.customDropdownTrigger[aria-expanded="true"] .dropdownChevron {
+  transform: rotate(180deg);
+  stroke: #FFFFFF;
 }
 
-.dropdownToolbarButton select option:hover,
-#scaleSelect option:hover {
-  background-color: #2E2E33 !important;
-  color: #FFFFFF !important;
+.customDropdownMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 156px;
+  background-color: #141417;
+  border: 1px solid #27272A;
+  border-radius: 8px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  padding: 5px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  animation: dropdownFadeIn 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.customDropdownMenu.hidden {
+  display: none !important;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -4px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.customDropdownGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.customDropdownDivider {
+  height: 1px;
+  background-color: #27272A;
+  margin: 4px 2px;
+}
+
+.customDropdownItem {
+  height: 28px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: #D4D4D8;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  user-select: none;
+}
+
+.customDropdownItem:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF;
+}
+
+.customDropdownItem.active {
+  background-color: rgba(255, 255, 255, 0.12);
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+.customDropdownItem.active::after {
+  content: "✓";
+  font-size: 11px;
+  font-weight: 700;
+  color: #F59E0B;
+  margin-left: 8px;
 }
 
 /* 5. Clean up clutter buttons & irrelevant sidebar tabs */
@@ -394,11 +459,20 @@ textarea,
 
 /* 6. Thumbnails */
 .thumbnail {
-  margin: 12px 10px !important;
+  margin: 10px auto !important;
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.thumbnail.selected {
+  border-color: transparent !important;
+  background: transparent !important;
 }
 
 .thumbnailImage {
-  border: 1.5px solid #222226 !important;
+  border: 1px solid #27272A !important;
   border-radius: 4px !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
   transition: all 0.15s ease !important;
@@ -409,8 +483,8 @@ textarea,
 }
 
 .thumbnail.selected .thumbnailImage {
-  border-color: #F59E0B !important;
-  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3) !important;
+  border: 2px solid #F59E0B !important;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25), 0 4px 16px rgba(0, 0, 0, 0.6) !important;
 }
 
 /* 7. Outline / Chapter Tree */

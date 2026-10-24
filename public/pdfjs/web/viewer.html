@@ -32,7 +32,7 @@ See https://github.com/adobe-type-tools/cmap-resources
 <script src="../build/pdf.mjs" type="module"></script>
 
     <link rel="stylesheet" href="viewer.css">
-    <link rel="stylesheet" href="slate-theme.css?v=10">
+    <link rel="stylesheet" href="slate-theme.css?v=11">
 
   <script src="viewer.mjs" type="module"></script>
   </head>
@@ -171,7 +171,7 @@ See https://github.com/adobe-type-tools/cmap-resources
                   </button>
                 </div>
                 <span id="scaleSelectContainer" class="dropdownToolbarButton">
-                  <select id="scaleSelect" title="Zoom" tabindex="0" data-l10n-id="pdfjs-zoom-select">
+                  <select id="scaleSelect" title="Zoom" tabindex="0" data-l10n-id="pdfjs-zoom-select" style="display: none !important;">
                     <option id="pageAutoOption" title="" value="auto" data-l10n-id="pdfjs-page-scale-auto">Automatic Zoom</option>
                     <option id="pageActualOption" title="" value="page-actual" data-l10n-id="pdfjs-page-scale-actual">Actual Size</option>
                     <option id="pageFitOption" title="" value="page-fit" selected="selected" data-l10n-id="pdfjs-page-scale-fit">Page Fit</option>
@@ -186,6 +186,33 @@ See https://github.com/adobe-type-tools/cmap-resources
                     <option title="" value="3" data-l10n-id="pdfjs-page-scale-percent" data-l10n-args='{ "scale": 300 }'>300%</option>
                     <option title="" value="4" data-l10n-id="pdfjs-page-scale-percent" data-l10n-args='{ "scale": 400 }'>400%</option>
                   </select>
+                  <div id="customScaleDropdown" class="customDropdown">
+                    <button id="customScaleButton" class="customDropdownTrigger" type="button" aria-haspopup="true" aria-expanded="false" title="Zoom">
+                      <span id="customScaleLabel">Page Fit</span>
+                      <svg class="dropdownChevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    </button>
+                    <div id="customScaleMenu" class="customDropdownMenu hidden" role="menu">
+                      <div class="customDropdownGroup">
+                        <button class="customDropdownItem" data-value="auto" role="menuitem">Automatic Zoom</button>
+                        <button class="customDropdownItem" data-value="page-actual" role="menuitem">Actual Size</button>
+                        <button class="customDropdownItem active" data-value="page-fit" role="menuitem">Page Fit</button>
+                        <button class="customDropdownItem" data-value="page-width" role="menuitem">Page Width</button>
+                      </div>
+                      <div class="customDropdownDivider"></div>
+                      <div class="customDropdownGroup">
+                        <button class="customDropdownItem" data-value="0.5" role="menuitem">50%</button>
+                        <button class="customDropdownItem" data-value="0.75" role="menuitem">75%</button>
+                        <button class="customDropdownItem" data-value="1" role="menuitem">100%</button>
+                        <button class="customDropdownItem" data-value="1.25" role="menuitem">125%</button>
+                        <button class="customDropdownItem" data-value="1.5" role="menuitem">150%</button>
+                        <button class="customDropdownItem" data-value="2" role="menuitem">200%</button>
+                        <button class="customDropdownItem" data-value="3" role="menuitem">300%</button>
+                        <button class="customDropdownItem" data-value="4" role="menuitem">400%</button>
+                      </div>
+                    </div>
+                  </div>
                 </span>
               </div>
               <div id="toolbarViewerRight" class="toolbarHorizontalGroup">
@@ -672,8 +699,68 @@ See https://github.com/adobe-type-tools/cmap-resources
             window.parent.postMessage({ action: 'closePreview' }, '*');
           });
         }
+        // Custom Scale Dropdown Wiring
+        const scaleBtn = document.getElementById('customScaleButton');
+        const scaleMenu = document.getElementById('customScaleMenu');
+        const scaleLabel = document.getElementById('customScaleLabel');
+        const realScaleSelect = document.getElementById('scaleSelect');
+
+        if (scaleBtn && scaleMenu && realScaleSelect) {
+          scaleBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isHidden = scaleMenu.classList.toggle('hidden');
+            scaleBtn.setAttribute('aria-expanded', (!isHidden).toString());
+          });
+
+          scaleMenu.addEventListener('click', function(e) {
+            const item = e.target.closest('.customDropdownItem');
+            if (!item) return;
+            const val = item.getAttribute('data-value');
+            if (val && realScaleSelect) {
+              realScaleSelect.value = val;
+              realScaleSelect.dispatchEvent(new Event('change'));
+            }
+            scaleMenu.classList.add('hidden');
+            scaleBtn.setAttribute('aria-expanded', 'false');
+            updateCustomScaleUI();
+          });
+
+          function updateCustomScaleUI() {
+            if (!realScaleSelect || !scaleLabel) return;
+            const val = realScaleSelect.value;
+            const opt = realScaleSelect.selectedOptions && realScaleSelect.selectedOptions[0];
+            if (opt) {
+              scaleLabel.textContent = opt.textContent || opt.text || val;
+            }
+            scaleMenu.querySelectorAll('.customDropdownItem').forEach(function(el) {
+              if (el.getAttribute('data-value') === val) {
+                el.classList.add('active');
+              } else {
+                el.classList.remove('active');
+              }
+            });
+          }
+
+          realScaleSelect.addEventListener('change', updateCustomScaleUI);
+          setInterval(updateCustomScaleUI, 400);
+
+          document.addEventListener('click', function(e) {
+            if (!scaleBtn.contains(e.target) && !scaleMenu.contains(e.target)) {
+              scaleMenu.classList.add('hidden');
+              scaleBtn.setAttribute('aria-expanded', 'false');
+            }
+          });
+        }
+
         window.addEventListener('keydown', function(e) {
           if (e.key === 'Escape') {
+            const scaleMenu = document.getElementById('customScaleMenu');
+            if (scaleMenu && !scaleMenu.classList.contains('hidden')) {
+              scaleMenu.classList.add('hidden');
+              const scaleBtn = document.getElementById('customScaleButton');
+              if (scaleBtn) scaleBtn.setAttribute('aria-expanded', 'false');
+              return;
+            }
             window.parent.postMessage({ action: 'closePreview' }, '*');
           }
           if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
