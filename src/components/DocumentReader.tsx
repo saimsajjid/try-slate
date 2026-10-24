@@ -50,8 +50,8 @@ export const DocumentReader: React.FC<DocumentReaderProps> = ({
   const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const thumbnailRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
 
-  // Clean relative path from fileUrl
-  const cleanDocPath = fileUrl.startsWith('/') ? fileUrl.slice(1) : fileUrl;
+  // Clean relative path from fileUrl (strips any leading / or academic-files/ prefix)
+  const cleanDocPath = fileUrl.replace(/^\/?academic-files\//, '').replace(/^\//, '');
 
   // 1. Fetch Document Manifest
   useEffect(() => {

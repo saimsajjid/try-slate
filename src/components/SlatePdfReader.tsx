@@ -9,14 +9,13 @@ import {
   Minimize2,
   Sidebar as SidebarIcon,
   Download,
-  AlertTriangle
+  AlertTriangle,
+  HardDrive
 } from 'lucide-react';
+import { getPdfFromDisk, savePdfToDisk } from '../services/academicCache';
 
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdfjs/build/pdf.worker.mjs';
-
-// In-memory binary cache to make re-opening files in the same session instantaneous (0ms)
-const pdfMemoryCache = new Map<string, ArrayBuffer>();
 
 interface SlatePdfReaderProps {
   fileUrl: string;
@@ -40,6 +39,7 @@ export const SlatePdfReader: React.FC<SlatePdfReaderProps> = ({
   const [downloadLoadedMB, setDownloadLoadedMB] = useState<string>('0');
   const [downloadTotalMB, setDownloadTotalMB] = useState<string>('');
   const [isDownloading, setIsDownloading] = useState<boolean>(true);
+  const [isLoadedFromDisk, setIsLoadedFromDisk] = useState<boolean>(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
 
   // PDF Document state
@@ -73,21 +73,49 @@ export const SlatePdfReader: React.FC<SlatePdfReaderProps> = ({
     return `${VAULT_STREAM_HOST}${clean}`;
   }, [fileUrl]);
 
-  // 1. Download Full PDF with Streaming Progress
+  // Ref to track current PDF Document for aggressive zero-RAM cleanup on unmount
+  const pdfDocRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null);
+
+  useEffect(() => {
+    pdfDocRef.current = pdfDoc;
+  }, [pdfDoc]);
+
+  // Clean unmount: destroys PDF.js WebWorker pages and flushes RAM immediately
+  useEffect(() => {
+    return () => {
+      if (pdfDocRef.current) {
+        try {
+          pdfDocRef.current.destroy();
+        } catch (e) {}
+        pdfDocRef.current = null;
+      }
+    };
+  }, []);
+
+  // 1. Load PDF from Pure On-Disk Cache or Stream from Vault
   useEffect(() => {
     let isMounted = true;
     const targetUrl = getFullDownloadUrl();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
-    // Check in-memory session cache first
-    if (pdfMemoryCache.has(targetUrl)) {
-      const cachedBuffer = pdfMemoryCache.get(targetUrl)!;
-      setIsDownloading(false);
-      setDownloadProgress(100);
+    async function loadDocument() {
+      try {
+        // Step 1: Check pure local disk cache (Cache API / IndexedDB) - ZERO RAM
+        const diskBuffer = await getPdfFromDisk(targetUrl);
+        if (!isMounted) return;
 
-      pdfjsLib
-        .getDocument({ data: cachedBuffer.slice(0) })
-        .promise.then(async (doc) => {
-          if (!isMounted) return;
+        if (diskBuffer) {
+          setIsLoadedFromDisk(true);
+          setIsDownloading(false);
+          setDownloadProgress(100);
+
+          const doc = await pdfjsLib.getDocument({ data: diskBuffer }).promise;
+          if (!isMounted) {
+            doc.destroy();
+            return;
+          }
+
           setPdfDoc(doc);
           setNumPages(doc.numPages);
           try {
@@ -95,28 +123,19 @@ export const SlatePdfReader: React.FC<SlatePdfReaderProps> = ({
             const vp = firstPage.getViewport({ scale: 1.0 });
             setAspectRatio(vp.width / vp.height);
           } catch (e) {}
-        })
-        .catch((err) => {
-          if (isMounted) setDownloadError(err.message || 'Failed to parse cached document');
-        });
+          return;
+        }
 
-      return;
-    }
+        // Step 2: If not yet cached on disk, start fresh fetch stream
+        setIsLoadedFromDisk(false);
+        setIsDownloading(true);
+        setDownloadProgress(0);
+        setDownloadLoadedMB('0');
+        setDownloadTotalMB('');
+        setDownloadError(null);
 
-    // Start fresh fetch stream
-    setIsDownloading(true);
-    setDownloadProgress(0);
-    setDownloadLoadedMB('0');
-    setDownloadTotalMB('');
-    setDownloadError(null);
-
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
-    const startTime = Date.now();
-
-    fetch(targetUrl, { signal: controller.signal })
-      .then(async (response) => {
+        const startTime = Date.now();
+        const response = await fetch(targetUrl, { signal: controller.signal });
         if (!response.ok) {
           throw new Error(`Server returned HTTP ${response.status}: ${response.statusText}`);
         }
@@ -148,7 +167,6 @@ export const SlatePdfReader: React.FC<SlatePdfReaderProps> = ({
               const pct = Math.min(100, Math.round((receivedBytes / totalBytes) * 100));
               setDownloadProgress(pct);
             } else {
-              // Indeterminate: advance progress gently
               setDownloadProgress((prev) => Math.min(95, prev + 2));
             }
           }
@@ -164,16 +182,20 @@ export const SlatePdfReader: React.FC<SlatePdfReaderProps> = ({
 
         const arrayBuffer = fullBuffer.buffer;
 
-        // Store in session cache
-        pdfMemoryCache.set(targetUrl, arrayBuffer);
+        // Persist directly to local device disk - ZERO global RAM retention
+        await savePdfToDisk(targetUrl, arrayBuffer);
 
         if (!isMounted) return;
         setIsDownloading(false);
         setDownloadProgress(100);
+        setIsLoadedFromDisk(true);
 
         // Load document into PDF.js
-        const doc = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }).promise;
-        if (!isMounted) return;
+        const doc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        if (!isMounted) {
+          doc.destroy();
+          return;
+        }
 
         setPdfDoc(doc);
         setNumPages(doc.numPages);
@@ -185,16 +207,18 @@ export const SlatePdfReader: React.FC<SlatePdfReaderProps> = ({
         } catch (e) {}
 
         const durationSec = ((Date.now() - startTime) / 1000).toFixed(1);
-        console.log(`Document ${fileName} downloaded in ${durationSec}s`);
-      })
-      .catch((err) => {
+        console.log(`Document ${fileName} streamed and saved to local disk in ${durationSec}s`);
+      } catch (err: any) {
         if (err.name === 'AbortError') return;
         if (isMounted) {
-          console.error('Download error:', err);
-          setDownloadError(err.message || 'Failed to download document');
+          console.error('Document load error:', err);
+          setDownloadError(err.message || 'Failed to load document');
           setIsDownloading(false);
         }
-      });
+      }
+    }
+
+    loadDocument();
 
     return () => {
       isMounted = false;
@@ -369,6 +393,20 @@ export const SlatePdfReader: React.FC<SlatePdfReaderProps> = ({
                 ({fileSize})
               </span>
             )}
+
+            {isLoadedFromDisk ? (
+              <span
+                className="hidden sm:inline-flex items-center gap-1 bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/40 font-mono text-[10px] font-bold px-1.5 py-0.5 rounded shadow-[1px_1px_0px_#141414] shrink-0"
+                title="Saved to local device disk storage (100% offline available)"
+              >
+                <HardDrive size={11} className="text-[#10B981]" />
+                OFFLINE DISK
+              </span>
+            ) : isDownloading ? (
+              <span className="hidden sm:inline-flex items-center gap-1 bg-amber-500/15 text-amber-400 border border-amber-500/40 font-mono text-[10px] font-bold px-1.5 py-0.5 rounded shadow-[1px_1px_0px_#141414] shrink-0">
+                STREAMING
+              </span>
+            ) : null}
           </div>
         </div>
 
