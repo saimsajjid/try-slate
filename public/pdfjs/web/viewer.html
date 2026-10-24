@@ -32,7 +32,7 @@ See https://github.com/adobe-type-tools/cmap-resources
 <script src="../build/pdf.mjs" type="module"></script>
 
     <link rel="stylesheet" href="viewer.css">
-    <link rel="stylesheet" href="slate-theme.css?v=7">
+    <link rel="stylesheet" href="slate-theme.css?v=8">
 
   <script src="viewer.mjs" type="module"></script>
   </head>
@@ -97,11 +97,11 @@ See https://github.com/adobe-type-tools/cmap-resources
                   <span id="docSize" class="docSizeText"></span>
                 </div>
                 <div class="toolbarButtonSpacer"></div>
-                <div class="toolbarButtonWithContainer">
-                  <button id="viewFindButton" class="toolbarButton" type="button" title="Find in Document" tabindex="0" data-l10n-id="pdfjs-findbar-button" aria-expanded="false" aria-controls="findbar">
+                <div class="toolbarButtonWithContainer" id="viewFindButtonContainer" style="display: none !important;">
+                  <button id="viewFindButton" class="toolbarButton" type="button" title="Find in Document" tabindex="0" data-l10n-id="pdfjs-findbar-button" aria-expanded="false" aria-controls="findbar" style="display: none !important;">
                     <span data-l10n-id="pdfjs-findbar-button-label">Find</span>
                   </button>
-                  <div class="hidden doorHanger toolbarHorizontalGroup" id="findbar">
+                  <div class="hidden doorHanger toolbarHorizontalGroup" id="findbar" style="display: none !important;">
                     <div id="findInputContainer" class="toolbarHorizontalGroup">
                       <span class="loadingInput end toolbarHorizontalGroup">
                         <input id="findInput" class="toolbarField" title="Find" placeholder="Find in document…" tabindex="0" data-l10n-id="pdfjs-find-input" aria-invalid="false">
@@ -676,7 +676,11 @@ See https://github.com/adobe-type-tools/cmap-resources
           if (e.key === 'Escape') {
             window.parent.postMessage({ action: 'closePreview' }, '*');
           }
-        });
+          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }, true);
 
         const dlBtn = document.getElementById('downloadButton');
         if (dlBtn) {
