@@ -3,7 +3,7 @@ import * as docx from 'docx-preview';
 import { marked } from 'marked';
 import { ReactPptxViewer } from '@extend-ai/react-pptx';
 import '@extend-ai/react-pptx/styles.css';
-import { SlatePdfReader } from './SlatePdfReader';
+import { getPdfFromDisk, savePdfToDisk } from '../services/academicCache';
 
 marked.use({
   gfm: true,
@@ -50,6 +50,7 @@ export function FilePreviewModal({
 
   // PDF / Image Blob URL state (bypasses IDM download interceptor)
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [pdfSourceUrl, setPdfSourceUrl] = useState<string>('');
 
   // PPTX binary buffer for Wasm presentation viewer
   const [pptxBuffer, setPptxBuffer] = useState<ArrayBuffer | null>(null);
@@ -83,8 +84,11 @@ export function FilePreviewModal({
     return () => {
       blobCacheRef.current.forEach((url) => URL.revokeObjectURL(url));
       blobCacheRef.current.clear();
+      if (pdfSourceUrl && pdfSourceUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(pdfSourceUrl);
+      }
     };
-  }, []);
+  }, [pdfSourceUrl]);
 
   const ext = file ? file.type.toLowerCase() : '';
   const isCurrentAnImage = isImage(ext);
@@ -144,10 +148,42 @@ export function FilePreviewModal({
     // Obfuscated Base64 endpoint to completely bypass IDM system-level network interceptor
     const previewStreamUrl = `${VAULT_STREAM_HOST}/api/doc-stream?doc=${encodeURIComponent(btoa(file.url))}`;
 
-    // 1. PDF: Handled by dedicated PdfViewer component with strict byte-range streaming
+    // 1. PDF: Handled by official Mozilla PDF.js Web Viewer with on-disk offline caching
     if (ext === 'pdf') {
-      setLoading(false);
-      return;
+      let isMounted = true;
+      const targetUrl = `${VAULT_STREAM_HOST}${file.url}`;
+
+      getPdfFromDisk(targetUrl)
+        .then((buffer) => {
+          if (!isMounted) return;
+          if (buffer) {
+            const blob = new Blob([buffer], { type: 'application/pdf' });
+            const bUrl = URL.createObjectURL(blob);
+            setPdfSourceUrl(bUrl);
+            setLoading(false);
+          } else {
+            setPdfSourceUrl(targetUrl);
+            setLoading(false);
+
+            // Background write to on-disk persistent cache (zero RAM)
+            fetch(targetUrl)
+              .then((res) => (res.ok ? res.arrayBuffer() : null))
+              .then((buf) => {
+                if (buf) savePdfToDisk(targetUrl, buf);
+              })
+              .catch(() => {});
+          }
+        })
+        .catch(() => {
+          if (isMounted) {
+            setPdfSourceUrl(targetUrl);
+            setLoading(false);
+          }
+        });
+
+      return () => {
+        isMounted = false;
+      };
     }
 
     // 2. Images: Lightbox preview with fast RAM blob cache & preloading
@@ -366,28 +402,6 @@ export function FilePreviewModal({
 
   if (!file) return null;
 
-  if (ext === 'pdf') {
-    return (
-      <div
-        className="fixed inset-0 z-50 bg-[#121214] flex flex-col w-screen h-screen select-none overflow-hidden animate-in fade-in duration-100"
-        onClick={onClose}
-      >
-        <div
-          className="w-full h-full overflow-hidden flex flex-col"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <SlatePdfReader
-            fileUrl={file.url}
-            fileName={file.name}
-            fileSize={file.size}
-            onDownload={() => onDownload(file)}
-            onClose={onClose}
-          />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div
       className="fixed inset-0 z-50 bg-[#141414] flex flex-col w-screen h-screen select-none overflow-hidden animate-in fade-in duration-100"
@@ -493,7 +507,7 @@ export function FilePreviewModal({
               {ext === 'pdf' && (
                 <div className="w-full h-full min-w-0 min-h-0 flex-1 overflow-hidden relative block">
                   <iframe
-                    src={`/pdfjs/web/viewer.html?file=${encodeURIComponent(`${VAULT_STREAM_HOST}${file.url}`)}`}
+                    src={`/pdfjs/web/viewer.html?file=${encodeURIComponent(pdfSourceUrl || `${VAULT_STREAM_HOST}${file.url}`)}`}
                     className="w-full h-full border-none bg-neutral-900 block"
                     title={file.name}
                   />
