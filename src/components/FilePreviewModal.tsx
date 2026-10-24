@@ -371,40 +371,40 @@ export function FilePreviewModal({
       onClick={onClose}
     >
       <div
-        className="bg-white flex flex-col w-full h-full overflow-hidden"
+        className="bg-[#121214] flex flex-col w-full h-full overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Header Bar */}
-        <div className="bg-neutral-50 border-b-2 border-[#141414] px-4 py-2.5 flex items-center justify-between gap-3 shrink-0">
+        <div className="bg-[#161618] border-b-2 border-[#141414] px-4 py-2.5 flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
             <span
-              className={`text-xs font-mono font-bold px-2 py-0.5 border rounded uppercase shrink-0 ${
+              className={`text-xs font-mono font-bold px-2 py-0.5 border rounded uppercase shrink-0 shadow-[1px_1px_0px_#141414] ${
                 ext === 'pdf'
-                  ? 'bg-rose-50 text-rose-700 border-rose-200'
+                  ? 'bg-[#FF6D00]/20 text-[#FF6D00] border-[#FF6D00]/40'
                   : ext === 'docx' || ext === 'doc'
-                  ? 'bg-blue-50 text-blue-700 border-blue-200'
+                  ? 'bg-blue-500/20 text-blue-400 border-blue-500/40'
                   : ext === 'pptx' || ext === 'ppsx'
-                  ? 'bg-orange-50 text-orange-700 border-orange-200'
+                  ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
                   : isCurrentAnImage
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                  : 'bg-neutral-100 text-neutral-700 border-neutral-300'
+                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                  : 'bg-zinc-800 text-zinc-300 border-zinc-700'
               }`}
             >
               {ext}
             </span>
-            <span className="font-bold text-sm text-[#141414] truncate">{file.name}</span>
-            <span className="text-xs font-mono text-neutral-400 shrink-0">({file.size})</span>
+            <span className="font-bold text-sm text-zinc-100 truncate tracking-tight">{file.name}</span>
+            <span className="text-xs font-mono text-zinc-400 shrink-0">({file.size})</span>
 
             {/* Photo Gallery Counter & Quick Arrows */}
             {hasImageGallery && (
               <div className="hidden sm:flex items-center gap-1.5 ml-2 shrink-0">
-                <span className="text-[11px] font-mono font-bold bg-neutral-200/80 text-neutral-800 px-2 py-0.5 rounded-md border border-neutral-300">
+                <span className="text-[11px] font-mono font-bold bg-zinc-800 text-zinc-200 px-2 py-0.5 rounded-md border border-zinc-700">
                   {currentImageIndex + 1} / {imageFiles.length}
                 </span>
                 <button
                   onClick={handlePrev}
                   disabled={!hasPrev}
-                  className="w-6 h-6 rounded border border-[#141414] bg-white hover:bg-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-xs shadow-xs"
+                  className="w-6 h-6 rounded border border-[#141414] bg-[#222226] hover:bg-[#2C2C30] text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-xs shadow-xs"
                   title="Previous Photo (Left Arrow Key)"
                 >
                   ←
@@ -412,7 +412,7 @@ export function FilePreviewModal({
                 <button
                   onClick={handleNext}
                   disabled={!hasNext}
-                  className="w-6 h-6 rounded border border-[#141414] bg-white hover:bg-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-xs shadow-xs"
+                  className="w-6 h-6 rounded border border-[#141414] bg-[#222226] hover:bg-[#2C2C30] text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-xs shadow-xs"
                   title="Next Photo (Right Arrow Key)"
                 >
                   →
@@ -424,13 +424,13 @@ export function FilePreviewModal({
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => onDownload(file)}
-              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#141414] text-white hover:bg-neutral-800 transition-all shadow-[1.5px_1.5px_0px_#FF6D00] active:scale-95 flex items-center gap-1.5"
+              className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[#FF6D00] text-white hover:bg-[#e66200] transition-all border-2 border-[#141414] shadow-[2px_2px_0px_#141414] active:scale-95 flex items-center gap-1.5"
             >
               Download
             </button>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg border-2 border-[#141414] bg-white hover:bg-neutral-100 text-neutral-700 font-bold text-sm flex items-center justify-center shadow-[1px_1px_0px_#141414] active:scale-95 transition-all"
+              className="w-8 h-8 rounded-lg border-2 border-[#141414] bg-[#222226] hover:bg-[#2C2C30] text-zinc-300 hover:text-white font-bold text-sm flex items-center justify-center shadow-[1.5px_1.5px_0px_#141414] active:scale-95 transition-all"
               title="Close"
             >
               ✕
