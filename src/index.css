@@ -1,0 +1,478 @@
+@import "tailwindcss";
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scrollbar-gutter: stable;
+  }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #0f172a;
+    color: #f8fafc;
+  }
+}
+
+/* Custom smooth transitions for theme switches */
+.theme-transition {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.2s ease, box-shadow 0.25s ease;
+}
+
+/* Calm, butter-smooth fade transition (Zero horizontal jumping) */
+@keyframes smoothFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.anim-fade-in {
+  animation: smoothFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Slate Mascot "Hello Wave" Keyframes */
+@keyframes slateWaveHand {
+  0% {
+    transform: rotate(0deg);
+  }
+  20% {
+    transform: rotate(-28deg);
+  }
+  40% {
+    transform: rotate(22deg);
+  }
+  60% {
+    transform: rotate(-24deg);
+  }
+  80% {
+    transform: rotate(18deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes slateHappyFoot {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px) rotate(8deg);
+  }
+}
+
+.slate-waving-arm-active {
+  transform-origin: 27px 17px;
+  animation: slateWaveHand 0.65s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+.slate-waving-foot-active {
+  transform-origin: 23px 28px;
+  animation: slateHappyFoot 0.35s ease-in-out infinite;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+}
+
+/* Slate Academic Markdown Viewer Styles */
+.slate-markdown-body {
+  color: #1e293b;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.7;
+  font-size: 0.95rem;
+}
+
+.slate-markdown-body h1 {
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.025em;
+  margin-top: 0;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #0f172a;
+}
+
+.slate-markdown-body h2 {
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.015em;
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.slate-markdown-body h3 {
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.slate-markdown-body p {
+  margin-top: 0;
+  margin-bottom: 0.85rem;
+  color: #334155;
+}
+
+.slate-markdown-body blockquote {
+  background-color: #f8fafc;
+  border-left: 4px solid #0f172a;
+  border-top: 1px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 1rem 1.25rem;
+  margin: 1.25rem 0;
+  border-radius: 0 0.5rem 0.5rem 0;
+  box-shadow: 2px 2px 0px rgba(15, 23, 42, 0.08);
+  color: #0f172a;
+}
+
+.slate-markdown-body blockquote p {
+  margin-bottom: 0.5rem;
+}
+
+.slate-markdown-body blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+.slate-markdown-body table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 1.25rem 0;
+  border: 2px solid #0f172a;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 3px 3px 0px #0f172a;
+}
+
+.slate-markdown-body th {
+  background-color: #f1f5f9;
+  color: #0f172a;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 0.825rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 10px 16px;
+  border-bottom: 2px solid #0f172a;
+  border-right: 1px solid #cbd5e1;
+  text-align: left;
+}
+
+.slate-markdown-body th:last-child {
+  border-right: none;
+}
+
+.slate-markdown-body td {
+  padding: 10px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
+  font-size: 0.9rem;
+  color: #1e293b;
+  background-color: #ffffff;
+}
+
+.slate-markdown-body td:last-child {
+  border-right: none;
+}
+
+.slate-markdown-body tr:last-child td {
+  border-bottom: none;
+}
+
+.slate-markdown-body tr:nth-child(even) td {
+  background-color: #f8fafc;
+}
+
+.slate-markdown-body a {
+  color: #2563eb;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.slate-markdown-body a:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.slate-markdown-body ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+  color: #334155;
+}
+
+.slate-markdown-body ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+  color: #334155;
+}
+
+.slate-markdown-body ul ul,
+.slate-markdown-body ul ol,
+.slate-markdown-body ol ul,
+.slate-markdown-body ol ol {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.slate-markdown-body li {
+  margin-bottom: 0.35rem;
+  line-height: 1.6;
+}
+
+.slate-markdown-body code {
+  background-color: #f1f5f9;
+  color: #0f172a;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.85em;
+  border: 1px solid #cbd5e1;
+  font-weight: 600;
+}
+
+.slate-markdown-body pre {
+  background-color: #0f172a;
+  color: #f8fafc;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 2px solid #0f172a;
+  box-shadow: 3px 3px 0px #0f172a;
+  overflow-x: auto;
+  margin: 1.25rem 0;
+}
+
+.slate-markdown-body pre code {
+  background-color: transparent;
+  color: inherit;
+  border: none;
+  padding: 0;
+}
+
+.slate-markdown-body hr {
+  border: 0;
+  border-top: 1.5px solid #e2e8f0;
+  margin: 1.5rem 0;
+}
+
+.slate-markdown-body .video-container {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  height: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 2px solid #0f172a;
+  box-shadow: 4px 4px 0px #0f172a;
+  background-color: #0f172a;
+  margin: 1.5rem 0;
+}
+
+.slate-markdown-body .video-container iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+
+/* ========================================================
+   Custom Slate Animations for Empty States
+   ======================================================== */
+
+/* Sleeping Zzz Floating Animations */
+@keyframes floatZ1 {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.6);
+  }
+  20% {
+    opacity: 0.9;
+  }
+  75% {
+    opacity: 0.7;
+    transform: translate(3px, -14px) scale(0.95);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(5px, -22px) scale(1.1);
+  }
+}
+
+@keyframes floatZ2 {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.6);
+  }
+  25% {
+    opacity: 0.95;
+  }
+  75% {
+    opacity: 0.75;
+    transform: translate(5px, -18px) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(8px, -28px) scale(1.25);
+  }
+}
+
+@keyframes floatZ3 {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.6);
+  }
+  30% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 0.8;
+    transform: translate(7px, -24px) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(11px, -35px) scale(1.35);
+  }
+}
+
+.anim-sleep-z1 {
+  animation: floatZ1 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.anim-sleep-z2 {
+  animation: floatZ2 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite 0.9s;
+}
+
+.anim-sleep-z3 {
+  animation: floatZ3 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite 1.8s;
+}
+
+/* Gentle Sleeping Breathing */
+@keyframes sleepBreathe {
+  0%, 100% {
+    transform: scale(1, 1);
+  }
+  50% {
+    transform: scale(1.03, 0.96) translateY(0.5px);
+  }
+}
+
+.anim-sleep-breathe {
+  animation: sleepBreathe 3s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+/* Floating Question / Pending Indicator */
+@keyframes questionFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.anim-question-float {
+  animation: questionFloat 2.2s ease-in-out infinite;
+}
+
+/* Slate Recommends Playful Animations */
+@keyframes slateWave {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-12deg);
+  }
+  75% {
+    transform: rotate(10deg);
+  }
+}
+
+.anim-slate-wave {
+  animation: slateWave 2.4s ease-in-out infinite;
+  transform-origin: 84px 68px;
+}
+
+@keyframes sparkleSpin {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    transform: scale(1.15) rotate(180deg);
+  }
+}
+
+.anim-sparkle {
+  animation: sparkleSpin 4s ease-in-out infinite;
+  transform-origin: 60px 22px;
+}
+
+/* Floating Math Doodles for Empty Foundation Maths */
+@keyframes mathFloat1 {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(2deg);
+  }
+}
+
+@keyframes mathFloat2 {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(4px) rotate(-2deg);
+  }
+}
+
+.anim-math-float1 {
+  animation: mathFloat1 3.2s ease-in-out infinite;
+}
+
+.anim-math-float2 {
+  animation: mathFloat2 3.8s ease-in-out infinite;
+}
+
+

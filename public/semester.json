@@ -1,0 +1,900 @@
+{
+  "semester": "Fall 2026",
+  "section": "BSCS Green",
+  "campus": "PAF-IAST",
+  "timetable": {
+    "monday": [
+      {
+        "time": "09:00 - 11:30",
+        "code": "COMP-105L",
+        "title": "Fundamentals of ICT Lab",
+        "room": "C2-2CL",
+        "instructor": "Mr. Abdul Moiz"
+      },
+      {
+        "time": "12:30 - 14:00",
+        "code": "SS-103",
+        "title": "English Language & Communication Skills",
+        "room": "A1-304.4",
+        "instructor": "Mr. Sabir Shah"
+      },
+      {
+        "time": "14:00 - 15:30",
+        "code": "SS-103",
+        "title": "English Language & Communication Skills",
+        "room": "A1-304.4",
+        "instructor": "Mr. Sabir Shah"
+      },
+      {
+        "time": "15:30 - 17:00",
+        "code": "COMP-111",
+        "title": "Programming Fundamentals",
+        "room": "A1-304.1",
+        "instructor": "Dr. Farooq Ali"
+      }
+    ],
+    "tuesday": [
+      {
+        "time": "11:30 - 14:00",
+        "code": "COMP-111L",
+        "title": "Programming Fundamentals Lab",
+        "room": "C2-5CL",
+        "instructor": "Ms. Faiza Bukhari"
+      }
+    ],
+    "wednesday": [
+      {
+        "time": "09:00 - 10:30",
+        "code": "MATH-101",
+        "title": "Foundation Mathematics-1",
+        "room": "C1-B01",
+        "instructor": "Ms. Aneela Bibi"
+      },
+      {
+        "time": "11:00 - 12:00",
+        "code": "COMP-105",
+        "title": "Fundamentals of ICT",
+        "room": "A1-306.1",
+        "instructor": "Ms. Iqra Kanwal"
+      },
+      {
+        "time": "12:00 - 12:30",
+        "code": "SS-112",
+        "title": "Islamic Studies",
+        "room": "Online 4",
+        "instructor": "Dr. Ahmed Abdullah"
+      },
+      {
+        "time": "16:00 - 17:00",
+        "code": "SS-113",
+        "title": "Pakistan Studies",
+        "room": "Online 8",
+        "instructor": "Dr. Touqeer Akhtar Nasir"
+      }
+    ],
+    "thursday": [
+      {
+        "time": "09:00 - 11:00",
+        "code": "SS-111",
+        "title": "Understanding of Quran-I",
+        "room": "A1-307 (LT)",
+        "instructor": "Dr. Waqas Ahmed"
+      },
+      {
+        "time": "11:30 - 14:00",
+        "code": "PHY-101L",
+        "title": "Applied Physics Lab",
+        "room": "A1-301 Phy(Lab)",
+        "instructor": "Mr. Behzad Gull"
+      },
+      {
+        "time": "14:00 - 15:30",
+        "code": "PHY-101",
+        "title": "Applied Physics",
+        "room": "A1-304.1",
+        "instructor": "Dr. Anique Ahmed"
+      }
+    ],
+    "friday": [
+      {
+        "time": "09:00 - 10:30",
+        "code": "PHY-101",
+        "title": "Applied Physics",
+        "room": "A1-304.1",
+        "instructor": "Dr. Anique Ahmed"
+      },
+      {
+        "time": "10:30 - 12:00",
+        "code": "COMP-111",
+        "title": "Programming Fundamentals",
+        "room": "A2-105",
+        "instructor": "Dr. Farooq Ali"
+      },
+      {
+        "time": "15:30 - 17:00",
+        "code": "MATH-101",
+        "title": "Foundation Mathematics-1",
+        "room": "C1-B07",
+        "instructor": "Ms. Aneela Bibi"
+      }
+    ]
+  },
+  "courses": [
+    {
+      "code": "PHY-101",
+      "title": "Applied Physics",
+      "instructor": "Dr. Anique Ahmed",
+      "room": "A1-304.1",
+      "tint": "#FFF8F2",
+      "accent": "#FF6D00",
+      "doodle": "atom",
+      "folders": [
+        {
+          "name": "Course Card",
+          "files": [
+            {
+              "name": "Applied_Physics_Week_wise_Course_Card_PHY-101.pdf",
+              "size": "356.4 KB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/PHY-101_Applied_Physics/Course_Card/Applied_Physics_Week_wise_Course_Card_PHY-101.pdf"
+            }
+          ]
+        },
+        {
+          "name": "Reference Materials",
+          "folders": [
+            {
+              "name": "Primary Book",
+              "files": [
+                {
+                  "name": "physics-for-scientists-7th-ed.pdf",
+                  "size": "35.5 MB",
+                  "type": "pdf",
+                  "url": "/academic-files/Courses/PHY-101_Applied_Physics/Reference_Materials/Primary Book/physics-for-scientists-7th-ed.pdf"
+                }
+              ]
+            },
+            {
+              "name": "Reference Books",
+              "files": [
+                {
+                  "name": "Fundamentals of Physics (10th Edition).pdf",
+                  "size": "30.7 MB",
+                  "type": "pdf",
+                  "url": "/academic-files/Courses/PHY-101_Applied_Physics/Reference_Materials/Reference Books/Fundamentals of Physics (10th Edition).pdf"
+                },
+                {
+                  "name": "Physics for Engineers and Scientists (3rd Edition).pdf",
+                  "size": "25.8 MB",
+                  "type": "pdf",
+                  "url": "/academic-files/Courses/PHY-101_Applied_Physics/Reference_Materials/Reference Books/Physics for Engineers and Scientists (3rd Edition).pdf"
+                },
+                {
+                  "name": "UNIVERSITY PHYSICS with Modern Physics (14th Edition).pdf",
+                  "size": "56.7 MB",
+                  "type": "pdf",
+                  "url": "/academic-files/Courses/PHY-101_Applied_Physics/Reference_Materials/Reference Books/UNIVERSITY PHYSICS with Modern Physics (14th Edition).pdf"
+                }
+              ]
+            }
+          ],
+          "files": []
+        },
+        {
+          "name": "Week 01",
+          "files": [
+            {
+              "name": "Lecture1_Ph101_Fall2026.pdf",
+              "size": "2.4 MB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/PHY-101_Applied_Physics/Week_01/Lecture1_Ph101_Fall2026.pdf"
+            }
+          ]
+        },
+        {
+          "name": "Week 02",
+          "files": [
+            {
+              "name": "Lecture2_Ph101_Fall2026.pdf",
+              "size": "1.8 MB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/PHY-101_Applied_Physics/Week_02/Lecture2_Ph101_Fall2026.pdf"
+            },
+            {
+              "name": "Lecture3_Ph101.pdf",
+              "size": "2.4 MB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/PHY-101_Applied_Physics/Week_02/Lecture3_Ph101.pdf"
+            }
+          ]
+        },
+        {
+          "name": "Week 03",
+          "files": [
+            {
+              "name": "Lecture4_Ph101_Fall2026.pdf",
+              "size": "1.7 MB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/PHY-101_Applied_Physics/Week_03/Lecture4_Ph101_Fall2026.pdf"
+            },
+            {
+              "name": "Lecture5_Ph101_Fall2026.pdf",
+              "size": "2.1 MB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/PHY-101_Applied_Physics/Week_03/Lecture5_Ph101_Fall2026.pdf"
+            }
+          ]
+        }
+      ],
+      "files": []
+    },
+    {
+      "code": "PHY-101L",
+      "title": "Applied Physics Lab",
+      "instructor": "Mr. Muhammad Behzad Gull",
+      "room": "A1-301 Phy(Lab)",
+      "tint": "#F5F3FF",
+      "accent": "#7C3AED",
+      "doodle": "flask",
+      "folders": [
+        {
+          "name": "Course Card",
+          "files": [
+            {
+              "name": "Applied_Physics_Lab_Course_Card_PHY-101L.pdf",
+              "size": "332.8 KB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/PHY-101L_Applied_Physics_Lab/Course_Card/Applied_Physics_Lab_Course_Card_PHY-101L.pdf"
+            }
+          ]
+        },
+        {
+          "name": "Week 01",
+          "files": [
+            {
+              "name": "PHY-101L_Lab_02_Resistor_Color_Coding.pdf",
+              "size": "676.6 KB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/PHY-101L_Applied_Physics_Lab/Week_01/PHY-101L_Lab_02_Resistor_Color_Coding.pdf"
+            }
+          ]
+        },
+        {
+          "name": "Week 02",
+          "files": [
+            {
+              "name": "PHY-101L_Lab_03_LCR_Meter.pdf",
+              "size": "1.2 MB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/PHY-101L_Applied_Physics_Lab/Week_02/PHY-101L_Lab_03_LCR_Meter.pdf"
+            }
+          ]
+        },
+        {
+          "name": "Week 03",
+          "files": [
+            {
+              "name": "Lab_Session_09_Faraday_s_Law.pdf",
+              "size": "427.7 KB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/PHY-101L_Applied_Physics_Lab/Week_03/Lab_Session_09_Faraday_s_Law.pdf"
+            }
+          ]
+        },
+        {
+          "name": "Week 04",
+          "files": [
+            {
+              "name": "PHY-101L_Lab_04_Coulombs_Law.md",
+              "size": "459 B",
+              "type": "md",
+              "url": "/academic-files/Courses/PHY-101L_Applied_Physics_Lab/Week_04/PHY-101L_Lab_04_Coulombs_Law.md"
+            },
+            {
+              "name": "PHY-101L_Lab_04_Newtons_Laws_Update.md",
+              "size": "554 B",
+              "type": "md",
+              "url": "/academic-files/Courses/PHY-101L_Applied_Physics_Lab/Week_04/PHY-101L_Lab_04_Newtons_Laws_Update.md"
+            }
+          ]
+        }
+      ],
+      "files": []
+    },
+    {
+      "code": "COMP-111",
+      "title": "Programming Fundamentals",
+      "instructor": "Dr. Farooq Ali",
+      "room": "A1-304.1",
+      "tint": "#F0FDF4",
+      "accent": "#16A34A",
+      "doodle": "laptop",
+      "folders": [
+        {
+          "name": "Course Card",
+          "files": []
+        },
+        {
+          "name": "Reference Materials",
+          "files": []
+        },
+        {
+          "name": "Recommendations",
+          "files": []
+        },
+        {
+          "name": "Week 01",
+          "files": []
+        },
+        {
+          "name": "Week 02",
+          "files": [
+            {
+              "name": "PF_Lecture_01_Intro_and_Algorithms_(Other_Section_Same_Topic).pdf",
+              "size": "1.0 MB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/COMP-111_Programming_Fundamentals/Week_02/PF_Lecture_01_Intro_and_Algorithms_(Other_Section_Same_Topic).pdf"
+            }
+          ]
+        },
+        {
+          "name": "Week 03",
+          "files": []
+        },
+        {
+          "name": "Week 04",
+          "files": [
+            {
+              "name": "Lecture_4_Datatype.pdf",
+              "size": "237.5 KB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/COMP-111_Programming_Fundamentals/Week_04/Lecture_4_Datatype.pdf"
+            }
+          ]
+        }
+      ],
+      "files": []
+    },
+    {
+      "code": "COMP-111L",
+      "title": "Programming Fundamentals Lab",
+      "instructor": "Ms. Faiza Bukhari",
+      "room": "C2-5CL",
+      "tint": "#F0FDF4",
+      "accent": "#16A34A",
+      "doodle": "laptop",
+      "folders": [
+        {
+          "name": "Course Card",
+          "files": [
+            {
+              "name": "PF_Lab_Course_Card_and_Rubrics.pdf",
+              "size": "233.5 KB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/COMP-111L_Programming_Fundamentals_Lab/Course_Card/PF_Lab_Course_Card_and_Rubrics.pdf"
+            }
+          ]
+        },
+        {
+          "name": "Reference Materials",
+          "files": [
+            {
+              "name": "PF_Lab_Manual.pdf",
+              "size": "4.2 MB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/COMP-111L_Programming_Fundamentals_Lab/Reference_Materials/PF_Lab_Manual.pdf"
+            }
+          ]
+        },
+        {
+          "name": "Recommendations",
+          "files": []
+        },
+        {
+          "name": "Week 01",
+          "files": []
+        },
+        {
+          "name": "Week 02",
+          "files": []
+        },
+        {
+          "name": "Week 03",
+          "files": [
+            {
+              "name": "COMP-111L_Lab_01_DevCPP_and_Basics.pdf",
+              "size": "733.8 KB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/COMP-111L_Programming_Fundamentals_Lab/Week_03/COMP-111L_Lab_01_DevCPP_and_Basics.pdf"
+            }
+          ]
+        },
+        {
+          "name": "Week 04",
+          "files": [
+            {
+              "name": "COMP-111L_Lab_02_Datatypes_and_Variables.pdf",
+              "size": "1.2 MB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/COMP-111L_Programming_Fundamentals_Lab/Week_04/COMP-111L_Lab_02_Datatypes_and_Variables.pdf"
+            }
+          ]
+        }
+      ],
+      "files": []
+    },
+    {
+      "code": "COMP-105",
+      "title": "Fundamentals of ICT",
+      "instructor": "Ms. Iqra Kanwal",
+      "room": "A1-306.1",
+      "tint": "#EFF6FF",
+      "accent": "#2563EB",
+      "doodle": "compass",
+      "folders": [
+        {
+          "name": "Course Card",
+          "files": [
+            {
+              "name": "COMP-105_Fundamentals_of_ICT_Revised_Course_Card.pdf",
+              "size": "755.8 KB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/COMP-105_Fundamentals_of_ICT/Course_Card/COMP-105_Fundamentals_of_ICT_Revised_Course_Card.pdf"
+            }
+          ]
+        },
+        {
+          "name": "Week 01",
+          "files": []
+        },
+        {
+          "name": "Week 02",
+          "files": [
+            {
+              "name": "Lecture_01_Introduction_to_ICT.pdf",
+              "size": "555.0 KB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/COMP-105_Fundamentals_of_ICT/Week_02/Lecture_01_Introduction_to_ICT.pdf"
+            }
+          ]
+        },
+        {
+          "name": "Week 03",
+          "files": [
+            {
+              "name": "Lecture_02_Part_01_Evolution_of_ICT.pdf",
+              "size": "1.7 MB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/COMP-105_Fundamentals_of_ICT/Week_03/Lecture_02_Part_01_Evolution_of_ICT.pdf"
+            },
+            {
+              "name": "Lecture_02_Part_02_Components_of_Computer.pdf",
+              "size": "943.9 KB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/COMP-105_Fundamentals_of_ICT/Week_03/Lecture_02_Part_02_Components_of_Computer.pdf"
+            }
+          ]
+        },
+        {
+          "name": "Week 04",
+          "files": [
+            {
+              "name": "Lecture_03_Software.pdf",
+              "size": "379.5 KB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/COMP-105_Fundamentals_of_ICT/Week_04/Lecture_03_Software.pdf"
+            }
+          ]
+        }
+      ],
+      "files": []
+    },
+    {
+      "code": "COMP-105L",
+      "title": "Fundamentals of ICT Lab",
+      "instructor": "Mr. Abdul Moiz",
+      "room": "C2-2CL",
+      "tint": "#EFF6FF",
+      "accent": "#2563EB",
+      "doodle": "wrench",
+      "folders": [
+        {
+          "name": "Course Card",
+          "files": [
+            {
+              "name": "ICT_Lab_Course_Card.pdf",
+              "size": "307.0 KB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/COMP-105L_Fundamentals_of_ICT_Lab/Course_Card/ICT_Lab_Course_Card.pdf"
+            }
+          ]
+        },
+        {
+          "name": "Week 01",
+          "files": []
+        },
+        {
+          "name": "Week 02",
+          "files": [
+            {
+              "name": "ICT_LAB_01_Manual.pdf",
+              "size": "1.5 MB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/COMP-105L_Fundamentals_of_ICT_Lab/Week_02/ICT_LAB_01_Manual.pdf"
+            },
+            {
+              "name": "ICT_Lab_02_Manual.pdf",
+              "size": "501.6 KB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/COMP-105L_Fundamentals_of_ICT_Lab/Week_02/ICT_Lab_02_Manual.pdf"
+            }
+          ]
+        },
+        {
+          "name": "Week 03",
+          "files": [
+            {
+              "name": "ICT_Manual_Lab3_MS_Word.pdf",
+              "size": "763.8 KB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/COMP-105L_Fundamentals_of_ICT_Lab/Week_03/ICT_Manual_Lab3_MS_Word.pdf"
+            }
+          ]
+        },
+        {
+          "name": "Week 04",
+          "files": [
+            {
+              "name": "ICT_Manual_Lab04_PowerPoint_Basics.pdf",
+              "size": "690.1 KB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/COMP-105L_Fundamentals_of_ICT_Lab/Week_04/ICT_Manual_Lab04_PowerPoint_Basics.pdf"
+            }
+          ]
+        }
+      ],
+      "files": []
+    },
+    {
+      "code": "SS-103",
+      "title": "English Language & Communication Skills",
+      "instructor": "Mr. Sabir Shah",
+      "room": "A1-304.4",
+      "tint": "#FFFBEB",
+      "accent": "#D97706",
+      "doodle": "feather",
+      "folders": [
+        {
+          "name": "Week 01",
+          "files": []
+        },
+        {
+          "name": "Week 02",
+          "files": [
+            {
+              "name": "Lecture_01_Introduction_and_Human_vs_Animal_Communication.md",
+              "size": "1.4 KB",
+              "type": "md",
+              "url": "/academic-files/Courses/SS-103_English_Language_and_Communication_Skills/Week_02/Lecture_01_Introduction_and_Human_vs_Animal_Communication.md"
+            }
+          ]
+        },
+        {
+          "name": "Week 03",
+          "files": [
+            {
+              "name": "Lecture_02_Communication_Process_Importance_and_Barriers.md",
+              "size": "5.9 KB",
+              "type": "md",
+              "url": "/academic-files/Courses/SS-103_English_Language_and_Communication_Skills/Week_03/Lecture_02_Communication_Process_Importance_and_Barriers.md"
+            }
+          ]
+        },
+        {
+          "name": "Week 04",
+          "files": []
+        }
+      ],
+      "files": []
+    },
+    {
+      "code": "SS-111",
+      "title": "Islamic Studies",
+      "instructor": "Dr. Ahmed Abdullah",
+      "room": "Online 4",
+      "tint": "#FDF2F8",
+      "accent": "#DB2777",
+      "doodle": "book",
+      "folders": [
+        {
+          "name": "Course Card",
+          "files": [
+            {
+              "name": "Course_Card_Islamic_Studies.pdf",
+              "size": "460.8 KB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/SS-111_Islamic_Studies/Course_Card/Course_Card_Islamic_Studies.pdf"
+            }
+          ]
+        },
+        {
+          "name": "Reference Materials",
+          "folders": [
+            {
+              "name": "Primary Book",
+              "files": [
+                {
+                  "name": "Introduction to Islam - Dr Muhammad Hamidullah.pdf",
+                  "size": "5.8 MB",
+                  "type": "pdf",
+                  "url": "/academic-files/Courses/SS-111_Islamic_Studies/Reference_Materials/Primary Book/Introduction to Islam - Dr Muhammad Hamidullah.pdf"
+                }
+              ]
+            },
+            {
+              "name": "Reference Books",
+              "files": [
+                {
+                  "name": "Ar-Raheeq Al-Makhtum (The Sealed Nectar - English) - Safi-ur-Rahman Mubarakpuri.pdf",
+                  "size": "959.0 KB",
+                  "type": "pdf",
+                  "url": "/academic-files/Courses/SS-111_Islamic_Studies/Reference_Materials/Reference Books/Ar-Raheeq Al-Makhtum (The Sealed Nectar - English) - Safi-ur-Rahman Mubarakpuri.pdf"
+                },
+                {
+                  "name": "Ar-Raheeq Al-Makhtum (The Sealed Nectar - Urdu) - Safi-ur-Rahman Mubarakpuri.pdf",
+                  "size": "25.8 MB",
+                  "type": "pdf",
+                  "url": "/academic-files/Courses/SS-111_Islamic_Studies/Reference_Materials/Reference Books/Ar-Raheeq Al-Makhtum (The Sealed Nectar - Urdu) - Safi-ur-Rahman Mubarakpuri.pdf"
+                },
+                {
+                  "name": "Asaan Usool-e-Fiqh - Maktaba Al-Bushra.pdf",
+                  "size": "1.9 MB",
+                  "type": "pdf",
+                  "url": "/academic-files/Courses/SS-111_Islamic_Studies/Reference_Materials/Reference Books/Asaan Usool-e-Fiqh - Maktaba Al-Bushra.pdf"
+                },
+                {
+                  "name": "Tareekh-e-Islam (Complete) - Maulana Muhammad Mian.pdf",
+                  "size": "27.4 MB",
+                  "type": "pdf",
+                  "url": "/academic-files/Courses/SS-111_Islamic_Studies/Reference_Materials/Reference Books/Tareekh-e-Islam (Complete) - Maulana Muhammad Mian.pdf"
+                },
+                {
+                  "name": "Uloom-ul-Quran (Quranic Sciences) - Mufti Muhammad Taqi Usmani.pdf",
+                  "size": "59.7 MB",
+                  "type": "pdf",
+                  "url": "/academic-files/Courses/SS-111_Islamic_Studies/Reference_Materials/Reference Books/Uloom-ul-Quran (Quranic Sciences) - Mufti Muhammad Taqi Usmani.pdf"
+                }
+              ]
+            }
+          ],
+          "files": []
+        },
+        {
+          "name": "Week 01",
+          "files": [
+            {
+              "name": "Lecture_Link.md",
+              "size": "670 B",
+              "type": "md",
+              "url": "/academic-files/Courses/SS-111_Islamic_Studies/Week_01/Lecture_Link.md"
+            },
+            {
+              "name": "W1 LEC QURANIC SCIENCES.pdf",
+              "size": "3.8 MB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/SS-111_Islamic_Studies/Week_01/W1 LEC QURANIC SCIENCES.pdf"
+            },
+            {
+              "name": "W1 ULOOM UL QURAN.pdf",
+              "size": "3.0 MB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/SS-111_Islamic_Studies/Week_01/W1 ULOOM UL QURAN.pdf"
+            }
+          ]
+        },
+        {
+          "name": "Week 02",
+          "files": [
+            {
+              "name": "Lecture_Link.md",
+              "size": "668 B",
+              "type": "md",
+              "url": "/academic-files/Courses/SS-111_Islamic_Studies/Week_02/Lecture_Link.md"
+            },
+            {
+              "name": "W2_Al_Baqra_284-286.pdf",
+              "size": "168.8 KB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/SS-111_Islamic_Studies/Week_02/W2_Al_Baqra_284-286.pdf"
+            },
+            {
+              "name": "W2_Verses_of_Surah_AlFurqan.pdf",
+              "size": "227.0 KB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/SS-111_Islamic_Studies/Week_02/W2_Verses_of_Surah_AlFurqan.pdf"
+            },
+            {
+              "name": "W2_Verses_of_Surah_Almoimoon.pdf",
+              "size": "171.4 KB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/SS-111_Islamic_Studies/Week_02/W2_Verses_of_Surah_Almoimoon.pdf"
+            }
+          ]
+        },
+        {
+          "name": "Week 03",
+          "files": [
+            {
+              "name": "Lecture_Link.md",
+              "size": "668 B",
+              "type": "md",
+              "url": "/academic-files/Courses/SS-111_Islamic_Studies/Week_03/Lecture_Link.md"
+            },
+            {
+              "name": "W3_Verses_of_Surah_Al_Ahzab.pdf",
+              "size": "170.7 KB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/SS-111_Islamic_Studies/Week_03/W3_Verses_of_Surah_Al_Ahzab.pdf"
+            },
+            {
+              "name": "W3_Verses_of_Surah_Al_Hujurat.pdf",
+              "size": "194.0 KB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/SS-111_Islamic_Studies/Week_03/W3_Verses_of_Surah_Al_Hujurat.pdf"
+            },
+            {
+              "name": "W3_Verses_of_Surah_Al_Saff.pdf",
+              "size": "164.4 KB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/SS-111_Islamic_Studies/Week_03/W3_Verses_of_Surah_Al_Saff.pdf"
+            }
+          ]
+        },
+        {
+          "name": "Week 04",
+          "files": [
+            {
+              "name": "Lecture_Link.md",
+              "size": "674 B",
+              "type": "md",
+              "url": "/academic-files/Courses/SS-111_Islamic_Studies/Week_04/Lecture_Link.md"
+            }
+          ]
+        }
+      ],
+      "files": []
+    },
+    {
+      "code": "SS-113",
+      "title": "Pakistan Studies",
+      "instructor": "Dr. Touqeer Akhtar Nasir",
+      "room": "Online 8",
+      "tint": "#ECFDF5",
+      "accent": "#059669",
+      "doodle": "landmark",
+      "folders": [
+        {
+          "name": "Course Card",
+          "files": [
+            {
+              "name": "Course_Card_Pakistan_Studies.pdf",
+              "size": "430.2 KB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/SS-113_Pakistan_Studies/Course_Card/Course_Card_Pakistan_Studies.pdf"
+            }
+          ]
+        },
+        {
+          "name": "Week 01",
+          "files": [
+            {
+              "name": "Lecture_01_Video_Link.md",
+              "size": "530 B",
+              "type": "md",
+              "url": "/academic-files/Courses/SS-113_Pakistan_Studies/Week_01/Lecture_01_Video_Link.md"
+            },
+            {
+              "name": "Lecture_1_Importance_of_Pakistan_Studies.pdf",
+              "size": "8.5 MB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/SS-113_Pakistan_Studies/Week_01/Lecture_1_Importance_of_Pakistan_Studies.pdf"
+            },
+            {
+              "name": "Lecture_02_Video_Link.md",
+              "size": "530 B",
+              "type": "md",
+              "url": "/academic-files/Courses/SS-113_Pakistan_Studies/Week_01/Lecture_02_Video_Link.md"
+            },
+            {
+              "name": "Lecture_2_Introduction_to_Critical_Thinking.pdf",
+              "size": "1.8 MB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/SS-113_Pakistan_Studies/Week_01/Lecture_2_Introduction_to_Critical_Thinking.pdf"
+            }
+          ]
+        },
+        {
+          "name": "Week 02",
+          "files": [
+            {
+              "name": "Lecture_03_Video_Link.md",
+              "size": "530 B",
+              "type": "md",
+              "url": "/academic-files/Courses/SS-113_Pakistan_Studies/Week_02/Lecture_03_Video_Link.md"
+            },
+            {
+              "name": "Lecture_3_Creation_of_Pakistan.pdf",
+              "size": "4.3 MB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/SS-113_Pakistan_Studies/Week_02/Lecture_3_Creation_of_Pakistan.pdf"
+            },
+            {
+              "name": "Lecture_04_Video_Link.md",
+              "size": "530 B",
+              "type": "md",
+              "url": "/academic-files/Courses/SS-113_Pakistan_Studies/Week_02/Lecture_04_Video_Link.md"
+            },
+            {
+              "name": "Lecture_4_Two_Nations_Theory.pdf",
+              "size": "2.5 MB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/SS-113_Pakistan_Studies/Week_02/Lecture_4_Two_Nations_Theory.pdf"
+            }
+          ]
+        },
+        {
+          "name": "Week 03",
+          "files": [
+            {
+              "name": "Lecture_05_Video_Link.md",
+              "size": "530 B",
+              "type": "md",
+              "url": "/academic-files/Courses/SS-113_Pakistan_Studies/Week_03/Lecture_05_Video_Link.md"
+            },
+            {
+              "name": "Lecture_5_Ideology_and_Muslim_Nationalism.pdf",
+              "size": "1.9 MB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/SS-113_Pakistan_Studies/Week_03/Lecture_5_Ideology_and_Muslim_Nationalism.pdf"
+            },
+            {
+              "name": "Lecture_06_Video_Link.md",
+              "size": "530 B",
+              "type": "md",
+              "url": "/academic-files/Courses/SS-113_Pakistan_Studies/Week_03/Lecture_06_Video_Link.md"
+            },
+            {
+              "name": "Lecture_6_Pre_and_Post_Partition_Pakistan_Kashmir.pdf",
+              "size": "3.0 MB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/SS-113_Pakistan_Studies/Week_03/Lecture_6_Pre_and_Post_Partition_Pakistan_Kashmir.pdf"
+            }
+          ]
+        }
+      ],
+      "files": []
+    },
+    {
+      "code": "MATH-101",
+      "title": "Foundation Mathematics-1",
+      "instructor": "Ms. Aneela Bibi",
+      "room": "C1-B01",
+      "tint": "#FEF2F2",
+      "accent": "#DC2626",
+      "doodle": "calculator",
+      "folders": [],
+      "files": []
+    },
+    {
+      "code": "SS-104",
+      "title": "Understanding of Quran-I",
+      "instructor": "Dr. Waqas Ahmed",
+      "room": "A1-307(LT)",
+      "tint": "#FDF4FF",
+      "accent": "#9333EA",
+      "doodle": "scroll",
+      "folders": [],
+      "files": []
+    }
+  ]
+}

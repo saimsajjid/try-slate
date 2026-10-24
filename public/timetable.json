@@ -1,0 +1,122 @@
+{
+  "semester": "Fall 2026",
+  "section": "BSCS Green",
+  "campus": "PAF-IAST",
+  "timetable": {
+    "monday": [
+      {
+        "time": "09:00 - 11:30",
+        "code": "COMP-105L",
+        "title": "Fundamentals of ICT Lab",
+        "room": "C2-2CL",
+        "instructor": "Mr. Abdul Moiz"
+      },
+      {
+        "time": "12:30 - 14:00",
+        "code": "SS-103",
+        "title": "English Language & Communication Skills",
+        "room": "A1-304.4",
+        "instructor": "Mr. Sabir Shah"
+      },
+      {
+        "time": "14:00 - 15:30",
+        "code": "SS-103",
+        "title": "English Language & Communication Skills",
+        "room": "A1-304.4",
+        "instructor": "Mr. Sabir Shah"
+      },
+      {
+        "time": "15:30 - 17:00",
+        "code": "COMP-111",
+        "title": "Programming Fundamentals",
+        "room": "A1-304.1",
+        "instructor": "Dr. Farooq Ali"
+      }
+    ],
+    "tuesday": [
+      {
+        "time": "11:30 - 14:00",
+        "code": "COMP-111L",
+        "title": "Programming Fundamentals Lab",
+        "room": "C2-5CL",
+        "instructor": "Ms. Faiza Bukhari"
+      }
+    ],
+    "wednesday": [
+      {
+        "time": "09:00 - 10:30",
+        "code": "MATH-101",
+        "title": "Foundation Mathematics-1",
+        "room": "C1-B01",
+        "instructor": "Ms. Aneela Bibi"
+      },
+      {
+        "time": "11:00 - 12:00",
+        "code": "COMP-105",
+        "title": "Fundamentals of ICT",
+        "room": "A1-306.1",
+        "instructor": "Ms. Iqra Kanwal"
+      },
+      {
+        "time": "12:00 - 12:30",
+        "code": "SS-112",
+        "title": "Islamic Studies",
+        "room": "Online 4",
+        "instructor": "Dr. Ahmed Abdullah"
+      },
+      {
+        "time": "16:00 - 17:00",
+        "code": "SS-113",
+        "title": "Pakistan Studies",
+        "room": "Online 8",
+        "instructor": "Dr. Touqeer Akhtar Nasir"
+      }
+    ],
+    "thursday": [
+      {
+        "time": "09:00 - 11:00",
+        "code": "SS-111",
+        "title": "Understanding of Quran-I",
+        "room": "A1-307 (LT)",
+        "instructor": "Dr. Waqas Ahmed"
+      },
+      {
+        "time": "11:30 - 14:00",
+        "code": "PHY-101L",
+        "title": "Applied Physics Lab",
+        "room": "A1-301 Phy(Lab)",
+        "instructor": "Mr. Behzad Gull"
+      },
+      {
+        "time": "14:00 - 15:30",
+        "code": "PHY-101",
+        "title": "Applied Physics",
+        "room": "A1-304.1",
+        "instructor": "Dr. Anique Ahmed"
+      }
+    ],
+    "friday": [
+      {
+        "time": "09:00 - 10:30",
+        "code": "PHY-101",
+        "title": "Applied Physics",
+        "room": "A1-304.1",
+        "instructor": "Dr. Anique Ahmed"
+      },
+      {
+        "time": "10:30 - 12:00",
+        "code": "COMP-111",
+        "title": "Programming Fundamentals",
+        "room": "A2-105",
+        "instructor": "Dr. Farooq Ali"
+      },
+      {
+        "time": "15:30 - 17:00",
+        "code": "MATH-101",
+        "title": "Foundation Mathematics-1",
+        "room": "C1-B07",
+        "instructor": "Ms. Aneela Bibi"
+      }
+    ]
+  }
+}

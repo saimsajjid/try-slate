@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Apple-style Crisp White Squircle Tile (Ensures 100% visibility on dark & light browser tabs) -->
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="#FFFFFF" stroke="#141414" stroke-width="2.5" />
+
+  <!-- Slate Mascot Ink Creature -->
+  <!-- Solid Ink Body -->
+  <rect x="14" y="13" width="36" height="32" rx="12" fill="#141414" />
+
+  <!-- Big Curious White Eyes -->
+  <circle cx="25" cy="26" r="4.5" fill="#FFFFFF" />
+  <circle cx="39" cy="26" r="4.5" fill="#FFFFFF" />
+
+  <!-- Pupils looking forward -->
+  <circle cx="26.5" cy="26" r="2" fill="#141414" />
+  <circle cx="40.5" cy="26" r="2" fill="#141414" />
+
+  <!-- White Eye Highlights -->
+  <circle cx="24" cy="24.5" r="1.2" fill="#FFFFFF" />
+  <circle cx="38" cy="24.5" r="1.2" fill="#FFFFFF" />
+
+  <!-- Cute Stick Legs -->
+  <line x1="26" y1="45" x2="23" y2="52" stroke="#141414" stroke-width="3" stroke-linecap="round" />
+  <line x1="38" y1="45" x2="41" y2="52" stroke="#141414" stroke-width="3" stroke-linecap="round" />
+</svg>
