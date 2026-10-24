@@ -10,7 +10,8 @@ import {
   Sidebar as SidebarIcon,
   Download,
   AlertTriangle,
-  HardDrive
+  X,
+  FileText
 } from 'lucide-react';
 import { getPdfFromDisk, savePdfToDisk } from '../services/academicCache';
 
@@ -51,6 +52,8 @@ export const SlatePdfReader: React.FC<SlatePdfReaderProps> = ({
   const [zoom, setZoom] = useState<number>(100);
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [isControlsVisible, setIsControlsVisible] = useState<boolean>(true);
+  const [isScrubbing, setIsScrubbing] = useState<boolean>(false);
 
   // Visible pages tracking
   const [visiblePages, setVisiblePages] = useState<Set<number>>(new Set([1, 2]));
@@ -59,19 +62,7 @@ export const SlatePdfReader: React.FC<SlatePdfReaderProps> = ({
   const pageContainerRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const thumbnailRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
   const abortControllerRef = useRef<AbortController | null>(null);
-
-  // Determine full file download URL
-  const getFullDownloadUrl = useCallback(() => {
-    let clean = fileUrl;
-    if (clean.startsWith('http://') || clean.startsWith('https://')) {
-      return clean;
-    }
-    if (!clean.startsWith('/')) clean = `/${clean}`;
-    if (!clean.startsWith('/academic-files')) {
-      clean = `/academic-files${clean}`;
-    }
-    return `${VAULT_STREAM_HOST}${clean}`;
-  }, [fileUrl]);
+  const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Ref to track current PDF Document for aggressive zero-RAM cleanup on unmount
   const pdfDocRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null);
@@ -91,6 +82,30 @@ export const SlatePdfReader: React.FC<SlatePdfReaderProps> = ({
       }
     };
   }, []);
+
+  // Determine full file download URL
+  const getFullDownloadUrl = useCallback(() => {
+    let clean = fileUrl;
+    if (clean.startsWith('http://') || clean.startsWith('https://')) {
+      return clean;
+    }
+    if (!clean.startsWith('/')) clean = `/${clean}`;
+    if (!clean.startsWith('/academic-files')) {
+      clean = `/academic-files${clean}`;
+    }
+    return `${VAULT_STREAM_HOST}${clean}`;
+  }, [fileUrl]);
+
+  // Auto-hide controls timer on activity
+  const triggerControlsActivity = useCallback(() => {
+    setIsControlsVisible(true);
+    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+    controlsTimeoutRef.current = setTimeout(() => {
+      if (!isScrubbing) {
+        setIsControlsVisible(false);
+      }
+    }, 3500);
+  }, [isScrubbing]);
 
   // 1. Load PDF from Pure On-Disk Cache or Stream from Vault
   useEffect(() => {
@@ -240,13 +255,12 @@ export const SlatePdfReader: React.FC<SlatePdfReaderProps> = ({
             setVisiblePages((prev) => {
               const next = new Set(prev);
               next.add(pageNum);
-              // Pre-buffer 1 page ahead and behind
               if (pageNum > 1) next.add(pageNum - 1);
               if (pageNum < numPages) next.add(pageNum + 1);
               return next;
             });
 
-            if (entry.intersectionRatio >= 0.4) {
+            if (entry.intersectionRatio >= 0.35) {
               setCurrentPage(pageNum);
               setJumpPageText(String(pageNum));
             }
@@ -255,7 +269,8 @@ export const SlatePdfReader: React.FC<SlatePdfReaderProps> = ({
       },
       {
         root: containerRef.current,
-        threshold: [0.05, 0.4]
+        rootMargin: '400px 0px',
+        threshold: [0.1, 0.35, 0.7]
       }
     );
 
@@ -268,26 +283,23 @@ export const SlatePdfReader: React.FC<SlatePdfReaderProps> = ({
     };
   }, [pdfDoc, numPages]);
 
-  // Scroll to page
-  const scrollToPage = useCallback(
-    (pageNum: number, behavior: ScrollBehavior = 'smooth') => {
-      if (!pdfDoc) return;
-      const target = Math.max(1, Math.min(numPages, pageNum));
-      const el = pageContainerRefs.current.get(target);
-      if (el) {
-        el.scrollIntoView({ behavior, block: 'start' });
-        setCurrentPage(target);
-        setJumpPageText(String(target));
-      }
-    },
-    [pdfDoc, numPages]
-  );
+  // Scroll smoothly to a specific page
+  const scrollToPage = useCallback((pageNum: number) => {
+    const clamped = Math.max(1, Math.min(pageNum, numPages));
+    setCurrentPage(clamped);
+    setJumpPageText(String(clamped));
+
+    const targetEl = pageContainerRefs.current.get(clamped);
+    if (targetEl && containerRef.current) {
+      targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [numPages]);
 
   const handleJumpSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = parseInt(jumpPageText, 10);
-    if (!isNaN(parsed)) {
-      scrollToPage(parsed);
+    const pageNum = parseInt(jumpPageText, 10);
+    if (!isNaN(pageNum)) {
+      scrollToPage(pageNum);
     } else {
       setJumpPageText(String(currentPage));
     }
@@ -301,8 +313,8 @@ export const SlatePdfReader: React.FC<SlatePdfReaderProps> = ({
     if (currentPage < numPages) scrollToPage(currentPage + 1);
   };
 
-  const handleZoomIn = () => setZoom((z) => Math.min(z + 25, 250));
-  const handleZoomOut = () => setZoom((z) => Math.max(z - 25, 50));
+  const handleZoomIn = () => setZoom((z) => Math.min(z + 20, 220));
+  const handleZoomOut = () => setZoom((z) => Math.max(z - 20, 60));
   const handleResetZoom = () => setZoom(100);
 
   const toggleFullscreen = () => {
@@ -323,9 +335,11 @@ export const SlatePdfReader: React.FC<SlatePdfReaderProps> = ({
       if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === 'j') {
         e.preventDefault();
         handleNextPage();
+        triggerControlsActivity();
       } else if (e.key === 'ArrowLeft' || e.key === 'PageUp' || e.key === 'k') {
         e.preventDefault();
         handlePrevPage();
+        triggerControlsActivity();
       } else if (e.key === 'Home') {
         e.preventDefault();
         scrollToPage(1);
@@ -335,12 +349,15 @@ export const SlatePdfReader: React.FC<SlatePdfReaderProps> = ({
       } else if (e.key === '+' || e.key === '=') {
         e.preventDefault();
         handleZoomIn();
+        triggerControlsActivity();
       } else if (e.key === '-') {
         e.preventDefault();
         handleZoomOut();
+        triggerControlsActivity();
       } else if (e.key === '0') {
         e.preventDefault();
         handleResetZoom();
+        triggerControlsActivity();
       } else if (e.key === 't' || e.key === 'T') {
         e.preventDefault();
         setSidebarOpen((s) => !s);
@@ -349,9 +366,9 @@ export const SlatePdfReader: React.FC<SlatePdfReaderProps> = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentPage, numPages, scrollToPage]);
+  }, [currentPage, numPages, scrollToPage, triggerControlsActivity]);
 
-  // Keep thumbnail sidebar centered
+  // Keep thumbnail sidebar centered on current page
   useEffect(() => {
     if (sidebarOpen && thumbnailRefs.current.has(currentPage)) {
       const btn = thumbnailRefs.current.get(currentPage);
@@ -362,205 +379,123 @@ export const SlatePdfReader: React.FC<SlatePdfReaderProps> = ({
   const isSlideDeck = aspectRatio > 1.2;
 
   return (
-    <div className="flex flex-col w-full h-full bg-[#121214] text-zinc-100 select-none overflow-hidden relative font-sans">
-      {/* 1. TOP HEADER CONTROLS BAR */}
-      <header className="bg-[#18181B] border-b-2 border-[#141414] px-3 sm:px-4 py-2 flex items-center justify-between gap-2 sm:gap-3 shrink-0 z-30 shadow-[0_2px_10px_rgba(0,0,0,0.5)]">
-        {/* Left: Sidebar Toggle & Doc Details */}
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            disabled={isDownloading || !pdfDoc}
-            className={`p-1.5 rounded-lg border-2 border-[#141414] transition-all flex items-center gap-1.5 text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed ${
-              sidebarOpen
-                ? 'bg-[#FF6D00] text-white shadow-[1.5px_1.5px_0px_#141414]'
-                : 'bg-[#222226] text-zinc-300 hover:text-white hover:bg-[#2C2C30] shadow-[1.5px_1.5px_0px_#141414]'
-            }`}
-            title="Toggle Thumbnails Sidebar (T)"
-          >
-            <SidebarIcon size={15} />
-            <span className="hidden md:inline font-mono text-[11px]">Pages</span>
-          </button>
+    <div
+      className="flex flex-col w-full h-full bg-[#0A0A0C] text-zinc-100 select-none overflow-hidden relative font-sans"
+      onMouseMove={triggerControlsActivity}
+    >
+      {/* 1. MINIMALIST TRANSLUCENT TOP HEADER */}
+      <header className="absolute top-0 left-0 right-0 h-14 px-4 sm:px-6 flex items-center justify-between z-30 bg-[#0B0B0E]/75 backdrop-blur-md border-b border-white/[0.06] transition-opacity duration-200">
+        {/* Left: Document Identity */}
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-7 h-7 rounded-lg bg-white/[0.06] border border-white/10 flex items-center justify-center shrink-0 text-zinc-400">
+            <FileText size={15} />
+          </div>
 
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="bg-[#FF6D00]/20 text-[#FF6D00] border border-[#FF6D00]/40 font-mono text-[11px] font-bold px-2 py-0.5 rounded shadow-[1px_1px_0px_#141414] shrink-0">
-              {isSlideDeck ? 'SLIDES' : 'PDF'}
-            </span>
-            <span className="font-bold text-xs sm:text-sm text-zinc-200 truncate max-w-[140px] sm:max-w-xs md:max-w-sm">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <h2 className="font-medium text-xs sm:text-sm text-zinc-200 truncate max-w-[180px] sm:max-w-md md:max-w-xl tracking-tight">
               {fileName}
-            </span>
+            </h2>
+
             {fileSize && (
-              <span className="hidden lg:inline text-[11px] font-mono text-zinc-500 font-bold shrink-0">
-                ({fileSize})
+              <span className="hidden md:inline text-[11px] font-mono text-zinc-500 shrink-0">
+                {fileSize}
               </span>
             )}
 
-            {isLoadedFromDisk ? (
+            {isLoadedFromDisk && (
               <span
-                className="hidden sm:inline-flex items-center gap-1 bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/40 font-mono text-[10px] font-bold px-1.5 py-0.5 rounded shadow-[1px_1px_0px_#141414] shrink-0"
-                title="Saved to local device disk storage (100% offline available)"
+                className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-mono shrink-0"
+                title="Saved to device disk cache (100% offline available)"
               >
-                <HardDrive size={11} className="text-[#10B981]" />
-                OFFLINE DISK
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                Offline Ready
               </span>
-            ) : isDownloading ? (
-              <span className="hidden sm:inline-flex items-center gap-1 bg-amber-500/15 text-amber-400 border border-amber-500/40 font-mono text-[10px] font-bold px-1.5 py-0.5 rounded shadow-[1px_1px_0px_#141414] shrink-0">
-                STREAMING
-              </span>
-            ) : null}
+            )}
           </div>
         </div>
 
-        {/* Center: Page Navigation & Quick Jump */}
-        {!isDownloading && numPages > 0 && (
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-            <button
-              onClick={handlePrevPage}
-              disabled={currentPage <= 1}
-              className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg border-2 border-[#141414] bg-[#222226] hover:bg-[#2C2C30] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center text-zinc-200 shadow-[1.5px_1.5px_0px_#141414] active:scale-95 transition-all"
-              title="Previous Page (Left Arrow)"
-            >
-              <ChevronLeft size={16} />
-            </button>
-
-            <form
-              onSubmit={handleJumpSubmit}
-              className="flex items-center gap-1 bg-[#121214] border-2 border-[#27272A] rounded-lg px-2 py-0.5 shadow-[1px_1px_0px_#141414] focus-within:border-[#FF6D00]"
-            >
-              <input
-                type="text"
-                value={jumpPageText}
-                onChange={(e) => setJumpPageText(e.target.value)}
-                onBlur={() => setJumpPageText(String(currentPage))}
-                className="w-8 sm:w-11 bg-transparent text-center font-mono font-bold text-xs text-[#FFA040] focus:outline-none"
-                title="Type page and press Enter"
-              />
-              <span className="text-[11px] font-mono text-zinc-500 font-bold">/</span>
-              <span className="text-[11px] font-mono text-zinc-400 font-bold pr-0.5">
-                {numPages}
-              </span>
-            </form>
-
-            <button
-              onClick={handleNextPage}
-              disabled={currentPage >= numPages}
-              className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg border-2 border-[#141414] bg-[#222226] hover:bg-[#2C2C30] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center text-zinc-200 shadow-[1.5px_1.5px_0px_#141414] active:scale-95 transition-all"
-              title="Next Page (Right Arrow)"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        )}
-
-        {/* Right: Zoom, Fullscreen & Action Buttons */}
+        {/* Right: Actions (Download, Fullscreen, Close) */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {!isDownloading && (
-            <div className="hidden sm:flex items-center gap-1 bg-[#121214] border border-[#27272A] rounded-lg p-0.5">
-              <button
-                onClick={handleZoomOut}
-                disabled={zoom <= 50}
-                className="p-1 hover:bg-[#222226] rounded text-zinc-400 hover:text-zinc-200 disabled:opacity-30 transition-all"
-                title="Zoom Out (-)"
-              >
-                <ZoomOut size={14} />
-              </button>
-              <button
-                onClick={handleResetZoom}
-                className="px-1.5 py-0.5 font-mono text-[11px] font-bold text-zinc-300 hover:text-white"
-                title="Reset Zoom (0)"
-              >
-                {zoom}%
-              </button>
-              <button
-                onClick={handleZoomIn}
-                disabled={zoom >= 250}
-                className="p-1 hover:bg-[#222226] rounded text-zinc-400 hover:text-zinc-200 disabled:opacity-30 transition-all"
-                title="Zoom In (+)"
-              >
-                <ZoomIn size={14} />
-              </button>
-            </div>
-          )}
-
-          <button
-            onClick={toggleFullscreen}
-            className="hidden sm:flex w-8 h-8 rounded-lg border-2 border-[#141414] bg-[#222226] hover:bg-[#2C2C30] text-zinc-300 hover:text-white items-center justify-center shadow-[1.5px_1.5px_0px_#141414] active:scale-95 transition-all"
-            title="Toggle Fullscreen (F)"
-          >
-            {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-          </button>
-
           {onDownload && (
             <button
               onClick={onDownload}
-              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#FF6D00] text-white hover:bg-[#E66200] transition-all border-2 border-[#141414] shadow-[2px_2px_0px_#141414] active:scale-95 flex items-center gap-1.5"
-              title="Download File"
+              className="h-8 px-3 rounded-lg text-xs font-medium text-zinc-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] transition-all flex items-center gap-1.5 active:scale-95"
+              title="Download file"
             >
-              <Download size={13} className="shrink-0" />
+              <Download size={13} />
               <span className="hidden sm:inline">Download</span>
             </button>
           )}
 
+          <button
+            onClick={toggleFullscreen}
+            className="w-8 h-8 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.08] border border-transparent hover:border-white/[0.06] flex items-center justify-center transition-all"
+            title="Toggle Fullscreen (F)"
+          >
+            {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+          </button>
+
           {onClose && (
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg border-2 border-[#141414] bg-[#222226] hover:bg-[#2C2C30] text-zinc-300 hover:text-white font-bold text-sm flex items-center justify-center shadow-[1.5px_1.5px_0px_#141414] active:scale-95 transition-all ml-1"
-              title="Close Preview (Esc)"
+              className="w-8 h-8 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.1] border border-transparent hover:border-white/[0.08] flex items-center justify-center transition-all ml-1"
+              title="Close Reader (Esc)"
             >
-              ✕
+              <X size={16} />
             </button>
           )}
         </div>
       </header>
 
       {/* 2. BODY CONTENT */}
-      <div className="flex-1 w-full min-h-0 flex overflow-hidden relative">
+      <div className="flex-1 w-full min-h-0 flex overflow-hidden relative pt-14">
         {/* DOWNLOAD IN PROGRESS SCREEN */}
         {isDownloading && (
-          <div className="m-auto max-w-md w-full px-6 py-10 flex flex-col items-center text-center animate-in fade-in duration-150">
-            <div className="w-16 h-16 rounded-2xl bg-[#18181B] border-2 border-[#141414] shadow-[3px_3px_0px_#FF6D00] flex items-center justify-center mb-5">
-              <span className="font-mono font-bold text-[#FF6D00] text-xl">PDF</span>
+          <div className="m-auto max-w-sm w-full px-6 py-10 flex flex-col items-center text-center animate-in fade-in duration-200">
+            <div className="w-14 h-14 rounded-2xl bg-[#141418] border border-white/10 shadow-2xl flex items-center justify-center mb-5 text-[#FF6D00]">
+              <FileText size={24} />
             </div>
 
-            <h3 className="text-base font-bold text-zinc-100 mb-1 tracking-tight">
+            <h3 className="text-sm font-semibold text-zinc-100 mb-1 tracking-tight">
               Downloading Document
             </h3>
-            <p className="text-xs font-mono text-zinc-400 truncate max-w-sm mb-6">
+            <p className="text-xs font-mono text-zinc-400 truncate max-w-xs mb-6">
               {fileName}
             </p>
 
-            {/* Neo-Brutalist Progress Bar */}
-            <div className="w-full bg-[#161618] border-2 border-[#141414] rounded-xl h-5 p-0.5 shadow-[2px_2px_0px_#141414] overflow-hidden mb-3">
+            {/* Smooth Modern Progress Bar */}
+            <div className="w-full bg-white/[0.06] rounded-full h-2 overflow-hidden mb-3">
               <div
-                className="bg-[#FF6D00] h-full rounded-lg transition-all duration-150 ease-out flex items-center justify-end pr-1"
+                className="bg-[#FF6D00] h-full rounded-full transition-all duration-200 ease-out"
                 style={{ width: `${downloadProgress}%` }}
               />
             </div>
 
-            <div className="w-full flex items-center justify-between text-xs font-mono font-bold text-zinc-400">
-              <span className="text-[#FFA040]">{downloadProgress}%</span>
+            <div className="w-full flex items-center justify-between text-[11px] font-mono text-zinc-400">
+              <span className="text-[#FFA040] font-semibold">{downloadProgress}%</span>
               <span>
                 {downloadLoadedMB} MB {downloadTotalMB ? `/ ${downloadTotalMB} MB` : ''}
               </span>
             </div>
 
             <p className="text-[11px] text-zinc-500 font-mono mt-4">
-              Downloaded once and cached in browser memory for instant offline reading.
+              Stored directly to device disk for instant offline access.
             </p>
           </div>
         )}
 
         {/* DOWNLOAD ERROR SCREEN */}
         {downloadError && (
-          <div className="m-auto p-6 max-w-md bg-[#18181B] border-2 border-red-500 rounded-2xl shadow-[4px_4px_0px_#EF4444] text-center space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-red-500/20 text-red-400 mx-auto flex items-center justify-center border border-red-500/40">
+          <div className="m-auto p-6 max-w-md bg-[#141418] border border-red-500/30 rounded-2xl shadow-2xl text-center space-y-3">
+            <div className="w-10 h-10 rounded-xl bg-red-500/10 text-red-400 mx-auto flex items-center justify-center border border-red-500/20">
               <AlertTriangle size={20} />
             </div>
-            <h3 className="font-bold text-sm text-red-400">Download Unavailable</h3>
+            <h3 className="font-semibold text-sm text-red-400">Unable to load document</h3>
             <p className="text-xs font-mono text-zinc-400">{downloadError}</p>
             {onDownload && (
               <button
                 onClick={onDownload}
-                className="px-4 py-2 rounded-xl bg-[#FF6D00] text-white text-xs font-bold hover:bg-[#E66200] shadow-[2px_2px_0px_#141414] transition-all"
+                className="px-4 py-2 rounded-xl bg-white/[0.08] hover:bg-white/[0.12] text-white text-xs font-medium border border-white/10 transition-all"
               >
                 Download File Directly
               </button>
@@ -568,17 +503,17 @@ export const SlatePdfReader: React.FC<SlatePdfReaderProps> = ({
           </div>
         )}
 
-        {/* DOCUMENT VIEWER (ONCE 100% DOWNLOADED) */}
+        {/* DOCUMENT VIEWER (ONCE DOWNLOADED) */}
         {!isDownloading && !downloadError && pdfDoc && (
           <>
-            {/* THUMBNAILS SIDEBAR */}
+            {/* SLEEK THUMBNAIL DRAWER */}
             {sidebarOpen && (
-              <aside className="w-48 sm:w-56 shrink-0 bg-[#161618] border-r-2 border-[#141414] flex flex-col h-full z-20 shadow-[2px_0_10px_rgba(0,0,0,0.4)] animate-in slide-in-from-left duration-150">
-                <div className="p-3 border-b border-[#27272A] flex items-center justify-between">
-                  <span className="text-xs font-mono font-bold text-zinc-400 uppercase tracking-wider">
-                    Thumbnails
+              <aside className="w-52 sm:w-60 shrink-0 bg-[#0E0E12]/95 backdrop-blur-xl border-r border-white/[0.08] flex flex-col h-full z-20 shadow-2xl animate-in slide-in-from-left duration-200">
+                <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between">
+                  <span className="text-xs font-medium text-zinc-300">
+                    Pages
                   </span>
-                  <span className="text-[11px] font-mono text-zinc-500 font-bold">
+                  <span className="text-[11px] font-mono text-zinc-500">
                     {numPages} total
                   </span>
                 </div>
@@ -594,25 +529,25 @@ export const SlatePdfReader: React.FC<SlatePdfReaderProps> = ({
                           else thumbnailRefs.current.delete(pageNum);
                         }}
                         onClick={() => scrollToPage(pageNum)}
-                        className={`w-full group text-left p-1.5 rounded-lg border-2 transition-all flex flex-col items-center gap-1.5 ${
+                        className={`w-full group text-left p-1.5 rounded-lg border transition-all flex flex-col items-center gap-1.5 ${
                           isSelected
-                            ? 'border-[#FF6D00] bg-[#FF6D00]/10 shadow-[2px_2px_0px_#FF6D00]'
-                            : 'border-[#27272A] bg-[#1F1F23] hover:border-zinc-400 shadow-[1.5px_1.5px_0px_#141414]'
+                            ? 'border-[#FF6D00] bg-[#FF6D00]/10 shadow-[0_0_15px_rgba(255,109,0,0.2)]'
+                            : 'border-white/[0.06] bg-white/[0.02] hover:border-white/20'
                         }`}
                       >
                         <div
-                          className="w-full bg-[#121214] rounded overflow-hidden relative flex items-center justify-center border border-black/30"
+                          className="w-full bg-[#18181C] rounded overflow-hidden relative flex items-center justify-center border border-black/30"
                           style={{ aspectRatio: aspectRatio || 1.414 }}
                         >
-                          <span className="text-xs font-mono font-bold text-zinc-500">
-                            p. {pageNum}
+                          <span className="text-xs font-mono text-zinc-500">
+                            {pageNum}
                           </span>
                         </div>
                         <span
-                          className={`text-[11px] font-mono font-bold ${
+                          className={`text-[11px] font-mono ${
                             isSelected
-                              ? 'text-[#FF6D00]'
-                              : 'text-zinc-400 group-hover:text-zinc-200'
+                              ? 'text-[#FF6D00] font-semibold'
+                              : 'text-zinc-500 group-hover:text-zinc-300'
                           }`}
                         >
                           Page {pageNum}
@@ -624,17 +559,21 @@ export const SlatePdfReader: React.FC<SlatePdfReaderProps> = ({
               </aside>
             )}
 
-            {/* MAIN CONTINUOUS SCROLL VIEWPORT */}
+            {/* MAIN CONTINUOUS SCROLL VIEWPORT WITH AMBIENT CANVAS */}
             <main
               ref={containerRef}
-              className="flex-1 w-full h-full overflow-y-auto overflow-x-auto bg-[#0E0E10] flex flex-col items-center p-3 sm:p-6 space-y-6 custom-scrollbar relative"
+              onScroll={triggerControlsActivity}
+              className="flex-1 w-full h-full overflow-y-auto overflow-x-auto flex flex-col items-center py-8 sm:py-12 px-4 sm:px-8 space-y-8 custom-scrollbar relative"
+              style={{
+                backgroundImage: 'radial-gradient(circle at 50% 20%, rgba(255,255,255,0.025) 0%, transparent 65%)'
+              }}
             >
               <div
-                className="flex flex-col items-center space-y-6 transition-all duration-150"
+                className="flex flex-col items-center space-y-8 transition-all duration-150"
                 style={{
                   width: isSlideDeck
-                    ? `${Math.max(600, Math.min(1400, (zoom / 100) * 1050))}px`
-                    : `${Math.max(500, Math.min(1200, (zoom / 100) * 820))}px`,
+                    ? `${Math.max(620, Math.min(1440, (zoom / 100) * 1050))}px`
+                    : `${Math.max(500, Math.min(1240, (zoom / 100) * 820))}px`,
                   maxWidth: '100%'
                 }}
               >
@@ -648,7 +587,7 @@ export const SlatePdfReader: React.FC<SlatePdfReaderProps> = ({
                         if (el) pageContainerRefs.current.set(pageNum, el);
                         else pageContainerRefs.current.delete(pageNum);
                       }}
-                      className="w-full bg-[#18181B] border-2 border-[#1E1E22] hover:border-[#3F3F46] rounded-xl overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.6)] relative group transition-all"
+                      className="w-full bg-[#141416] rounded-sm overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.7),0_2px_8px_rgba(0,0,0,0.5)] ring-1 ring-white/[0.08] relative group transition-all"
                       style={{ aspectRatio: aspectRatio || 1.414 }}
                     >
                       {/* Render PDF Canvas when in view */}
@@ -660,13 +599,13 @@ export const SlatePdfReader: React.FC<SlatePdfReaderProps> = ({
                           aspectRatio={aspectRatio}
                         />
                       ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center bg-[#151518] text-zinc-600 font-mono text-xs">
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-[#141418] text-zinc-600 font-mono text-xs">
                           <span>Page {pageNum}</span>
                         </div>
                       )}
 
-                      {/* Floating Page Pill badge on Hover */}
-                      <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none bg-[#141414]/90 backdrop-blur-xs text-white border border-white/20 font-mono text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded shadow">
+                      {/* Subtle Page Badge on Hover */}
+                      <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none bg-black/80 backdrop-blur-md text-zinc-300 border border-white/10 font-mono text-[11px] px-2 py-0.5 rounded shadow">
                         {pageNum} / {numPages}
                       </div>
                     </div>
@@ -674,6 +613,116 @@ export const SlatePdfReader: React.FC<SlatePdfReaderProps> = ({
                 })}
               </div>
             </main>
+
+            {/* 3. APPLE BOOKS / NOTION STYLE FLOATING PILL DOCK */}
+            <div
+              className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-40 transition-all duration-300 ${
+                isControlsVisible ? 'opacity-100 translate-y-0' : 'opacity-25 translate-y-2 hover:opacity-100 hover:translate-y-0'
+              }`}
+              onMouseEnter={() => setIsControlsVisible(true)}
+            >
+              <div className="bg-[#18181C]/90 backdrop-blur-2xl border border-white/[0.12] rounded-full px-2.5 py-1.5 shadow-[0_16px_40px_rgba(0,0,0,0.8)] flex items-center gap-1 sm:gap-2 text-zinc-300">
+                {/* Thumbnails Sidebar Toggle */}
+                <button
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                    sidebarOpen
+                      ? 'bg-white/20 text-white'
+                      : 'hover:bg-white/[0.08] text-zinc-400 hover:text-white'
+                  }`}
+                  title="Toggle Pages Drawer (T)"
+                >
+                  <SidebarIcon size={15} />
+                </button>
+
+                <div className="h-4 w-px bg-white/10" />
+
+                {/* Page Navigation */}
+                <button
+                  onClick={handlePrevPage}
+                  disabled={currentPage <= 1}
+                  className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-white/[0.08] disabled:opacity-20 disabled:hover:bg-transparent text-zinc-300 hover:text-white transition-all"
+                  title="Previous Page (Left Arrow)"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+
+                {/* Interactive Jump Box */}
+                <form onSubmit={handleJumpSubmit} className="flex items-center gap-1 px-1">
+                  <input
+                    type="text"
+                    value={jumpPageText}
+                    onChange={(e) => setJumpPageText(e.target.value)}
+                    onBlur={() => setJumpPageText(String(currentPage))}
+                    className="w-9 sm:w-12 text-center font-mono font-medium text-xs text-white bg-transparent focus:outline-none focus:bg-white/[0.06] rounded py-0.5"
+                    title="Type page and press Enter"
+                  />
+                  <span className="text-[11px] font-mono text-zinc-500">/</span>
+                  <span className="text-[11px] font-mono text-zinc-400 pl-0.5">
+                    {numPages}
+                  </span>
+                </form>
+
+                {/* Page Scrubber Slider for Fast Scrubbing in 1,000+ Page Textbooks */}
+                {numPages > 10 && (
+                  <div className="hidden md:flex items-center px-1">
+                    <input
+                      type="range"
+                      min={1}
+                      max={numPages}
+                      value={currentPage}
+                      onMouseDown={() => setIsScrubbing(true)}
+                      onMouseUp={() => setIsScrubbing(false)}
+                      onTouchStart={() => setIsScrubbing(true)}
+                      onTouchEnd={() => setIsScrubbing(false)}
+                      onChange={(e) => scrollToPage(Number(e.target.value))}
+                      className="w-20 sm:w-28 h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#FF6D00]"
+                      title="Scrub pages"
+                    />
+                  </div>
+                )}
+
+                <button
+                  onClick={handleNextPage}
+                  disabled={currentPage >= numPages}
+                  className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-white/[0.08] disabled:opacity-20 disabled:hover:bg-transparent text-zinc-300 hover:text-white transition-all"
+                  title="Next Page (Right Arrow)"
+                >
+                  <ChevronRight size={16} />
+                </button>
+
+                <div className="h-4 w-px bg-white/10" />
+
+                {/* Zoom Controls */}
+                <div className="flex items-center gap-0.5">
+                  <button
+                    onClick={handleZoomOut}
+                    disabled={zoom <= 60}
+                    className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-white/[0.08] disabled:opacity-20 text-zinc-400 hover:text-white transition-all"
+                    title="Zoom Out (-)"
+                  >
+                    <ZoomOut size={14} />
+                  </button>
+
+                  <button
+                    onClick={handleResetZoom}
+                    className="px-1.5 py-0.5 font-mono text-[11px] text-zinc-400 hover:text-white font-medium"
+                    title="Reset Zoom to 100% (0)"
+                  >
+                    {zoom}%
+                  </button>
+
+                  <button
+                    onClick={handleZoomIn}
+                    disabled={zoom >= 220}
+                    className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-white/[0.08] disabled:opacity-20 text-zinc-400 hover:text-white transition-all"
+                    title="Zoom In (+)"
+                  >
+                    <ZoomIn size={14} />
+                  </button>
+                </div>
+              </div>
+            </div>
           </>
         )}
       </div>
@@ -751,7 +800,7 @@ const PdfPageCanvas: React.FC<PdfPageCanvasProps> = ({ doc, pageNum, zoom }) => 
   }, [doc, pageNum, zoom]);
 
   return (
-    <div className="w-full h-full relative flex items-center justify-center">
+    <div className="w-full h-full relative flex items-center justify-center bg-white">
       <canvas
         ref={canvasRef}
         className={`w-full h-full object-contain block transition-opacity duration-150 ${
@@ -759,9 +808,9 @@ const PdfPageCanvas: React.FC<PdfPageCanvasProps> = ({ doc, pageNum, zoom }) => 
         }`}
       />
       {!rendered && (
-        <div className="absolute inset-0 flex items-center justify-center bg-[#151518]">
-          <span className="text-xs font-mono text-zinc-500 font-bold">
-            Rendering Page {pageNum}...
+        <div className="absolute inset-0 flex items-center justify-center bg-[#141418]">
+          <span className="text-xs font-mono text-zinc-500">
+            Page {pageNum}
           </span>
         </div>
       )}
