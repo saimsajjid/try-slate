@@ -728,7 +728,7 @@ textarea,
 
 .slateProgressBarFill {
   height: 100%;
-  width: 8%;
+  width: 0%;
   background: linear-gradient(90deg, #D97706, #F59E0B, #FBBF24);
   border-radius: 9999px;
   transition: width 0.22s ease-out;

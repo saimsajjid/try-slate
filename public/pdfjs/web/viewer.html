@@ -737,7 +737,7 @@ See https://github.com/adobe-type-tools/cmap-resources
             if (sizeEl) {
               sizeEl.textContent = '(' + size + ')';
               const initStatus = document.getElementById('slateStatusText');
-              if (initStatus) initStatus.textContent = 'Streaming ' + size + '...';
+              if (initStatus) initStatus.textContent = 'Downloading ' + size + '...';
             }
           }
         } catch (e) {}
@@ -764,7 +764,7 @@ See https://github.com/adobe-type-tools/cmap-resources
             if (customStatus) {
               slateStatusEl.textContent = customStatus;
             } else if (boundedPct < 25) {
-              slateStatusEl.textContent = 'Streaming document bytes...';
+              slateStatusEl.textContent = 'Downloading document bytes...';
             } else if (boundedPct < 75) {
               slateStatusEl.textContent = 'Downloading and caching...';
             } else if (boundedPct < 100) {
@@ -813,6 +813,18 @@ See https://github.com/adobe-type-tools/cmap-resources
           hookSlatePdfEvents();
         } else {
           document.addEventListener('webviewerloaded', hookSlatePdfEvents);
+          if (window.parent && window.parent.document) {
+            try {
+              window.parent.document.addEventListener('webviewerloaded', hookSlatePdfEvents);
+            } catch (e) {}
+          }
+          const slateAppPoll = setInterval(function() {
+            if (window.PDFViewerApplication && window.PDFViewerApplication.initializedPromise) {
+              clearInterval(slateAppPoll);
+              hookSlatePdfEvents();
+            }
+          }, 25);
+          setTimeout(function() { clearInterval(slateAppPoll); }, 6000);
         }
 
         const slatePollInterval = setInterval(function() {

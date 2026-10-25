@@ -243,7 +243,7 @@ export function PdfViewer({ url, fileName }: PdfViewerProps) {
           {pageRendering && (
             <div className="hidden sm:flex items-center gap-1.5 text-xs text-amber-400 font-mono ml-2">
               <div className="w-3 h-3 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
-              <span>Streaming page...</span>
+              <span>Loading page...</span>
             </div>
           )}
         </div>
@@ -278,7 +278,7 @@ export function PdfViewer({ url, fileName }: PdfViewerProps) {
           </div>
 
           <span className="hidden md:inline-block text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800">
-            Byte-Range Streamed
+            Document Ready
           </span>
         </div>
       </div>
@@ -292,14 +292,14 @@ export function PdfViewer({ url, fileName }: PdfViewerProps) {
           <div className="flex flex-col items-center justify-center gap-3">
             <div className="w-8 h-8 border-3 border-amber-400 border-t-transparent rounded-full animate-spin" />
             <p className="text-xs font-mono text-neutral-300 font-bold">
-              Connecting to byte-range stream for {fileName}...
+              Loading {fileName}...
             </p>
           </div>
         )}
 
         {error && (
           <div className="p-8 text-center max-w-md bg-white border-2 border-red-500 rounded-2xl shadow-[4px_4px_0px_#EF4444] space-y-3">
-            <h3 className="font-bold text-red-600 text-sm">Streaming Error</h3>
+            <h3 className="font-bold text-red-600 text-sm">Loading Error</h3>
             <p className="text-xs text-neutral-600 font-mono">{error}</p>
           </div>
         )}

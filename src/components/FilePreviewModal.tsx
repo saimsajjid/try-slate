@@ -43,6 +43,8 @@ export function FilePreviewModal({
   onDownload,
 }: FilePreviewModalProps) {
   const [loading, setLoading] = useState(true);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [downloadStatusText, setDownloadStatusText] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   // Markdown / Text state
@@ -154,6 +156,8 @@ export function FilePreviewModal({
     if (!file) return;
 
     setLoading(true);
+    setDownloadProgress(0);
+    setDownloadStatusText('');
     setError(null);
     setMarkdownHtml('');
     setBlobUrl(null);
@@ -163,29 +167,117 @@ export function FilePreviewModal({
     const ext = file.type.toLowerCase();
     const targetUrl = file.url.startsWith('http') ? file.url : `${VAULT_STREAM_HOST}${file.url}`;
 
-    // 1. PDF: Handled by official Mozilla PDF.js Web Viewer with on-disk offline caching
+    // 1. PDF: Handled by official Mozilla PDF.js Web Viewer with on-disk offline caching & single-stream progress
     if (ext === 'pdf') {
       let isMounted = true;
+      const abortController = new AbortController();
 
       getPdfFromDisk(targetUrl)
-        .then((buffer) => {
+        .then(async (buffer) => {
           if (!isMounted) return;
           if (buffer) {
+            // Document already cached on local disk -> Instant offline open
             const blob = new Blob([buffer], { type: 'application/pdf' });
             const bUrl = URL.createObjectURL(blob);
             setPdfSourceUrl(bUrl);
             setLoading(false);
           } else {
-            setPdfSourceUrl(targetUrl);
-            setLoading(false);
+            // First time opening: Single stream download with real-time percentage progress
+            setDownloadProgress(0);
+            setDownloadStatusText(file.size ? `Downloading ${file.size}...` : 'Downloading document...');
 
-            // Background write to on-disk persistent cache (zero RAM)
-            fetch(targetUrl)
-              .then((res) => (res.ok ? res.arrayBuffer() : null))
-              .then((buf) => {
-                if (buf) savePdfToDisk(targetUrl, buf);
-              })
-              .catch(() => {});
+            try {
+              const res = await fetch(targetUrl, { signal: abortController.signal });
+              if (!res.ok) {
+                throw new Error(`Failed to download file (${res.status} ${res.statusText})`);
+              }
+
+              const contentLengthHeader = res.headers.get('content-length');
+              let totalBytes = contentLengthHeader ? parseInt(contentLengthHeader, 10) : 0;
+
+              // Fallback: Parse file.size (e.g. "43.9 MB") if server omitted Content-Length
+              if (!totalBytes && file.size) {
+                const sizeMatch = file.size.match(/^([\d.]+)\s*(MB|KB|GB|B)?$/i);
+                if (sizeMatch) {
+                  const val = parseFloat(sizeMatch[1]);
+                  const unit = (sizeMatch[2] || 'MB').toUpperCase();
+                  if (unit === 'GB') totalBytes = Math.round(val * 1024 * 1024 * 1024);
+                  else if (unit === 'MB') totalBytes = Math.round(val * 1024 * 1024);
+                  else if (unit === 'KB') totalBytes = Math.round(val * 1024);
+                  else totalBytes = Math.round(val);
+                }
+              }
+
+              if (!res.body) {
+                const arrayBuf = await res.arrayBuffer();
+                if (!isMounted) return;
+                await savePdfToDisk(targetUrl, arrayBuf);
+                const blob = new Blob([arrayBuf], { type: 'application/pdf' });
+                const bUrl = URL.createObjectURL(blob);
+                setPdfSourceUrl(bUrl);
+                setLoading(false);
+                return;
+              }
+
+              const reader = res.body.getReader();
+              const chunks: Uint8Array[] = [];
+              let receivedBytes = 0;
+
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                if (!isMounted) return;
+
+                if (value) {
+                  chunks.push(value);
+                  receivedBytes += value.length;
+
+                  if (totalBytes > 0) {
+                    const pct = Math.min(99, Math.round((receivedBytes / totalBytes) * 100));
+                    setDownloadProgress(pct);
+                    if (pct < 80) {
+                      setDownloadStatusText(file.size ? `Downloading ${file.size}...` : 'Downloading document...');
+                    } else {
+                      setDownloadStatusText('Saving to device disk...');
+                    }
+                  } else {
+                    const mbReceived = (receivedBytes / (1024 * 1024)).toFixed(1);
+                    setDownloadStatusText(`Downloaded ${mbReceived} MB...`);
+                  }
+                }
+              }
+
+              if (!isMounted) return;
+
+              setDownloadProgress(100);
+              setDownloadStatusText('Opening document...');
+
+              // Combine chunks into single ArrayBuffer without duplicate allocations
+              const fullBuffer = new Uint8Array(receivedBytes);
+              let offset = 0;
+              for (const chunk of chunks) {
+                fullBuffer.set(chunk, offset);
+                offset += chunk.length;
+              }
+
+              // Persist directly to local disk cache (zero RAM retention)
+              await savePdfToDisk(targetUrl, fullBuffer.buffer);
+
+              if (!isMounted) return;
+
+              const blob = new Blob([fullBuffer.buffer], { type: 'application/pdf' });
+              const bUrl = URL.createObjectURL(blob);
+              setPdfSourceUrl(bUrl);
+              setLoading(false);
+            } catch (err: any) {
+              if (err.name === 'AbortError') return;
+              console.error('Error during streaming PDF download:', err);
+              if (isMounted) {
+                // Graceful fallback to direct URL
+                setPdfSourceUrl(targetUrl);
+                setLoading(false);
+              }
+            }
           }
         })
         .catch(() => {
@@ -197,6 +289,7 @@ export function FilePreviewModal({
 
       return () => {
         isMounted = false;
+        abortController.abort();
       };
     }
 
@@ -580,7 +673,7 @@ export function FilePreviewModal({
                 <div className="relative w-16 h-16 mb-4 flex items-center justify-center">
                   <div className="absolute -inset-1.5 rounded-2xl bg-amber-500/20 animate-pulse" />
                   <svg className="w-full h-full drop-shadow-md animate-bounce duration-1000 relative z-10" viewBox="0 0 64 64" fill="none">
-                    <rect x="2" y="2" width="60" height="60" rx="16" fill="#FFFFFF" stroke="#141414" stroke-width="2.5" />
+                    <rect x="2" y="2" width="60" height="60" rx="16" fill="#FFFFFF" stroke="#141414" strokeWidth="2.5" />
                     <rect x="14" y="13" width="36" height="32" rx="12" fill="#141414" />
                     <circle cx="25" cy="26" r="4.5" fill="#FFFFFF" />
                     <circle cx="39" cy="26" r="4.5" fill="#FFFFFF" />
@@ -588,8 +681,8 @@ export function FilePreviewModal({
                     <circle cx="40.5" cy="26" r="2" fill="#141414" />
                     <circle cx="24" cy="24.5" r="1.2" fill="#FFFFFF" />
                     <circle cx="38" cy="24.5" r="1.2" fill="#FFFFFF" />
-                    <line x1="26" y1="45" x2="23" y2="52" stroke="#141414" stroke-width="3" stroke-linecap="round" />
-                    <line x1="38" y1="45" x2="41" y2="52" stroke="#141414" stroke-width="3" stroke-linecap="round" />
+                    <line x1="26" y1="45" x2="23" y2="52" stroke="#141414" strokeWidth="3" strokeLinecap="round" />
+                    <line x1="38" y1="45" x2="41" y2="52" stroke="#141414" strokeWidth="3" strokeLinecap="round" />
                   </svg>
                 </div>
 
@@ -603,12 +696,17 @@ export function FilePreviewModal({
                 </div>
 
                 <div className="w-full h-1.5 bg-[#222226] rounded-full overflow-hidden relative mb-2.5">
-                  <div className="h-full bg-gradient-to-r from-amber-600 via-amber-400 to-amber-300 rounded-full animate-pulse w-full" />
+                  <div
+                    className="h-full bg-gradient-to-r from-amber-600 via-amber-400 to-amber-300 rounded-full transition-all duration-150"
+                    style={{ width: `${downloadProgress}%` }}
+                  />
                 </div>
 
                 <div className="w-full flex justify-between items-center text-[11px] font-mono text-zinc-500">
-                  <span>Saving to offline vault...</span>
-                  <span className="text-amber-400 font-bold">{file.size}</span>
+                  <span className="truncate mr-2">
+                    {downloadStatusText || (file.size ? `Downloading ${file.size}...` : 'Downloading document...')}
+                  </span>
+                  <span className="text-amber-400 font-bold shrink-0">{downloadProgress}%</span>
                 </div>
               </div>
             </div>
