@@ -37,50 +37,70 @@ function openIndexedDb(): Promise<IDBDatabase> {
  * Check if a document is already saved on local device disk
  */
 export async function isPdfOnDisk(url: string): Promise<boolean> {
-  if (typeof window === 'undefined') return false;
-
-  // 1. Primary: Cache API
-  if ('caches' in window) {
-    try {
-      const cache = await caches.open(CACHE_NAME);
-      const match = await cache.match(url, { ignoreSearch: true });
-      if (match) return true;
-    } catch (e) {
-      // Fall through to IndexedDB
-    }
-  }
-
-  // 2. Fallback: IndexedDB
-  if ('indexedDB' in window) {
-    try {
-      const db = await openIndexedDb();
-      return new Promise<boolean>((resolve) => {
-        const tx = db.transaction(IDB_STORE, 'readonly');
-        const store = tx.objectStore(IDB_STORE);
-        const req = store.count(url);
-        req.onsuccess = () => resolve(req.result > 0);
-        req.onerror = () => resolve(false);
-      });
-    } catch (e) {
-      return false;
-    }
-  }
-
-  return false;
+  const buf = await getPdfFromDisk(url);
+  return buf !== null;
 }
 
 /**
- * Read PDF ArrayBuffer directly from local device disk (Zero RAM retention)
+ * Validate that an ArrayBuffer contains a structurally intact, complete PDF file:
+ * 1. Must be >= 100 bytes
+ * 2. Must start with %PDF- header in first 1024 bytes
+ * 3. Must end with %%EOF marker in last 4096 bytes
  */
-function isBufferValidPdf(buffer: ArrayBuffer): boolean {
+export function isBufferValidPdf(buffer: ArrayBuffer): boolean {
   if (buffer.byteLength < 100) return false;
-  const tailStart = Math.max(0, buffer.byteLength - 512);
-  const tailBytes = new Uint8Array(buffer, tailStart, buffer.byteLength - tailStart);
+
+  // 1. Verify %PDF- header
+  const headLen = Math.min(1024, buffer.byteLength);
+  const headBytes = new Uint8Array(buffer, 0, headLen);
+  let headStr = '';
+  for (let i = 0; i < headLen; i++) {
+    headStr += String.fromCharCode(headBytes[i]);
+  }
+  if (!headStr.includes('%PDF-')) {
+    return false;
+  }
+
+  // 2. Verify %%EOF trailer marker
+  const tailLen = Math.min(4096, buffer.byteLength);
+  const tailStart = buffer.byteLength - tailLen;
+  const tailBytes = new Uint8Array(buffer, tailStart, tailLen);
   let tailStr = '';
-  for (let i = 0; i < tailBytes.length; i++) {
+  for (let i = 0; i < tailLen; i++) {
     tailStr += String.fromCharCode(tailBytes[i]);
   }
   return tailStr.includes('%%EOF');
+}
+
+/**
+ * Explicitly purge a PDF from both Cache API and IndexedDB
+ */
+export async function purgePdfFromDisk(url: string): Promise<void> {
+  if (typeof window === 'undefined') return;
+
+  if ('caches' in window) {
+    try {
+      const cache = await caches.open(CACHE_NAME);
+      await cache.delete(url, { ignoreSearch: true });
+    } catch (e) {
+      console.warn('Cache API purge error:', e);
+    }
+  }
+
+  if ('indexedDB' in window) {
+    try {
+      const db = await openIndexedDb();
+      await new Promise<void>((resolve) => {
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        const store = tx.objectStore(IDB_STORE);
+        store.delete(url);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => resolve();
+      });
+    } catch (e) {
+      console.warn('IndexedDB purge error:', e);
+    }
+  }
 }
 
 export async function getPdfFromDisk(url: string): Promise<ArrayBuffer | null> {
@@ -97,6 +117,7 @@ export async function getPdfFromDisk(url: string): Promise<ArrayBuffer | null> {
           return buf;
         }
         // Truncated/corrupt cache detected: automatically purge from disk
+        console.warn(`[SlateCache] Corrupt/truncated PDF in Cache API detected for ${url}. Purging...`);
         await cache.delete(url, { ignoreSearch: true });
       }
     } catch (e) {
@@ -121,7 +142,10 @@ export async function getPdfFromDisk(url: string): Promise<ArrayBuffer | null> {
           if (buf && isBufferValidPdf(buf)) {
             resolve(buf);
           } else {
-            if (buf) store.delete(url); // purge corrupt entry
+            if (buf) {
+              console.warn(`[SlateCache] Corrupt/truncated PDF in IndexedDB detected for ${url}. Purging...`);
+              store.delete(url);
+            }
             resolve(null);
           }
         };
@@ -141,6 +165,12 @@ export async function getPdfFromDisk(url: string): Promise<ArrayBuffer | null> {
  */
 export async function savePdfToDisk(url: string, data: ArrayBuffer): Promise<void> {
   if (typeof window === 'undefined') return;
+
+  // Strict guard: NEVER cache incomplete or corrupt PDF files on device disk
+  if (!isBufferValidPdf(data)) {
+    console.warn(`[SlateCache] Refusing to cache incomplete/corrupt PDF for ${url} (${data.byteLength} bytes)`);
+    return;
+  }
 
   // 1. Primary: Cache API
   if ('caches' in window) {

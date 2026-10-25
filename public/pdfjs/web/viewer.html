@@ -793,6 +793,9 @@ See https://github.com/adobe-type-tools/cmap-resources
                 app.eventBus.on('documentloaded', function() {
                   setTimeout(hideSlateLoader, 400);
                 });
+                app.eventBus.on('documenterror', function() {
+                  showCorruptError();
+                });
               }
             });
           }
@@ -806,6 +809,19 @@ See https://github.com/adobe-type-tools/cmap-resources
                 updateSlateProgress(pct);
               }
             };
+          }
+        }
+
+        function showCorruptError() {
+          clearInterval(slatePollInterval);
+          if (slateStatusEl) {
+            slateStatusEl.innerHTML = '<span style="color:#EF4444;font-weight:600;">Document compilation failed.</span> <button id="slateRetryBtn" style="margin-left:8px;padding:3px 10px;background:#D97706;color:white;border-radius:6px;border:none;font-weight:bold;cursor:pointer;font-size:11px;">Clear Cache & Retry</button>';
+            const rBtn = document.getElementById('slateRetryBtn');
+            if (rBtn) {
+              rBtn.addEventListener('click', function() {
+                window.parent.postMessage({ action: 'forceReloadPdf' }, '*');
+              });
+            }
           }
         }
 
@@ -838,12 +854,9 @@ See https://github.com/adobe-type-tools/cmap-resources
         setTimeout(function() {
           clearInterval(slatePollInterval);
           if (window.PDFViewerApplication && (!window.PDFViewerApplication.pagesCount || window.PDFViewerApplication.pagesCount === 0)) {
-            if (slateStatusEl) {
-              slateStatusEl.textContent = 'Document corrupted or incomplete on server.';
-              slateStatusEl.style.color = '#EF4444';
-            }
+            showCorruptError();
           }
-        }, 15000);
+        }, 8000);
 
         const closeBtn = document.getElementById('closeButton');
         if (closeBtn) {

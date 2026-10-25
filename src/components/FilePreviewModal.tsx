@@ -3,7 +3,7 @@ import * as docx from 'docx-preview';
 import { marked } from 'marked';
 import { ReactPptxViewer } from '@extend-ai/react-pptx';
 import '@extend-ai/react-pptx/styles.css';
-import { getPdfFromDisk, savePdfToDisk, getTextFromDisk, saveTextToDisk } from '../services/academicCache';
+import { getPdfFromDisk, savePdfToDisk, purgePdfFromDisk, isBufferValidPdf, getTextFromDisk, saveTextToDisk } from '../services/academicCache';
 
 marked.use({
   gfm: true,
@@ -51,6 +51,17 @@ export function FilePreviewModal({
   const [loading, setLoading] = useState(true);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [downloadStatusText, setDownloadStatusText] = useState('');
+  const [reloadCounter, setReloadCounter] = useState(0);
+
+  const handleForceReload = async () => {
+    if (file) {
+      const targetUrl = file.url.startsWith('http') ? file.url : `${VAULT_STREAM_HOST}${file.url}`;
+      await purgePdfFromDisk(targetUrl);
+    }
+    setError(null);
+    setLoading(true);
+    setReloadCounter((c) => c + 1);
+  };
   const [error, setError] = useState<string | null>(null);
 
   // Markdown / Text state
@@ -88,7 +99,7 @@ export function FilePreviewModal({
       document.body.style.overflow = originalOverflow;
       document.body.style.overscrollBehavior = originalOverscroll;
     };
-  }, [file]);
+  }, [file, reloadCounter]);
 
   // Revoke all cached blob URLs on modal unmount
   useEffect(() => {
@@ -199,7 +210,8 @@ export function FilePreviewModal({
             setDownloadStatusText(file.size ? `Downloading ${file.size}...` : 'Downloading document...');
 
             try {
-              const res = await fetch(targetUrl, { signal: abortController.signal });
+              // 1. Fetch file bypassing stale HTTP disk cache entries
+              const res = await fetch(targetUrl, { signal: abortController.signal, cache: 'no-cache' });
               if (!res.ok) {
                 throw new Error(`Failed to download file (${res.status} ${res.statusText})`);
               }
@@ -220,64 +232,80 @@ export function FilePreviewModal({
                 }
               }
 
+              let finalBuffer: ArrayBuffer;
+
               if (!res.body) {
                 const arrayBuf = await res.arrayBuffer();
                 if (!isMounted) return;
-                await savePdfToDisk(targetUrl, arrayBuf);
-                const blob = new Blob([arrayBuf], { type: 'application/pdf' });
-                const bUrl = URL.createObjectURL(blob);
-                setPdfSourceUrl(bUrl);
-                setLoading(false);
-                return;
-              }
+                finalBuffer = arrayBuf;
+              } else {
+                const reader = res.body.getReader();
+                const chunks: Uint8Array[] = [];
+                let receivedBytes = 0;
 
-              const reader = res.body.getReader();
-              const chunks: Uint8Array[] = [];
-              let receivedBytes = 0;
+                while (true) {
+                  const { done, value } = await reader.read();
+                  if (done) break;
+                  if (!isMounted) return;
 
-              while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                if (!isMounted) return;
+                  if (value) {
+                    chunks.push(value);
+                    receivedBytes += value.length;
 
-                if (value) {
-                  chunks.push(value);
-                  receivedBytes += value.length;
-
-                  if (totalBytes > 0) {
-                    const pct = Math.min(99, Math.round((receivedBytes / totalBytes) * 100));
-                    setDownloadProgress(pct);
-                    if (pct < 80) {
-                      setDownloadStatusText(file.size ? `Downloading ${file.size}...` : 'Downloading document...');
+                    if (totalBytes > 0) {
+                      const pct = Math.min(99, Math.round((receivedBytes / totalBytes) * 100));
+                      setDownloadProgress(pct);
+                      if (pct < 80) {
+                        setDownloadStatusText(file.size ? `Downloading ${file.size}...` : 'Downloading document...');
+                      } else {
+                        setDownloadStatusText('Saving to device disk...');
+                      }
                     } else {
-                      setDownloadStatusText('Saving to device disk...');
+                      const mbReceived = (receivedBytes / (1024 * 1024)).toFixed(1);
+                      setDownloadStatusText(`Downloaded ${mbReceived} MB...`);
                     }
-                  } else {
-                    const mbReceived = (receivedBytes / (1024 * 1024)).toFixed(1);
-                    setDownloadStatusText(`Downloaded ${mbReceived} MB...`);
                   }
                 }
+
+                if (!isMounted) return;
+
+                setDownloadProgress(100);
+                setDownloadStatusText('Opening document...');
+
+                // Combine chunks into single ArrayBuffer without duplicate allocations
+                const fullBuffer = new Uint8Array(receivedBytes);
+                let offset = 0;
+                for (const chunk of chunks) {
+                  fullBuffer.set(chunk, offset);
+                  offset += chunk.length;
+                }
+                finalBuffer = fullBuffer.buffer;
               }
 
-              if (!isMounted) return;
+              // Verify PDF structural integrity (Must have %PDF- header and %%EOF trailer)
+              if (!isBufferValidPdf(finalBuffer)) {
+                console.warn('[FilePreviewModal] Downloaded buffer failed integrity check. Performing forced cache-bust re-fetch...');
+                await purgePdfFromDisk(targetUrl);
 
-              setDownloadProgress(100);
-              setDownloadStatusText('Opening document...');
-
-              // Combine chunks into single ArrayBuffer without duplicate allocations
-              const fullBuffer = new Uint8Array(receivedBytes);
-              let offset = 0;
-              for (const chunk of chunks) {
-                fullBuffer.set(chunk, offset);
-                offset += chunk.length;
+                // Fetch directly from server bypassing any HTTP cache using unique timestamp
+                const bustUrl = `${targetUrl}${targetUrl.includes('?') ? '&' : '?'}_cb=${Date.now()}`;
+                const bustRes = await fetch(bustUrl, { signal: abortController.signal, cache: 'reload' });
+                if (!bustRes.ok) {
+                  throw new Error(`Failed to download fresh document (${bustRes.status} ${bustRes.statusText})`);
+                }
+                const freshBuf = await bustRes.arrayBuffer();
+                if (!isBufferValidPdf(freshBuf)) {
+                  throw new Error('Downloaded document is incomplete or corrupted on the server.');
+                }
+                finalBuffer = freshBuf;
               }
 
               // Persist directly to local disk cache (zero RAM retention)
-              await savePdfToDisk(targetUrl, fullBuffer.buffer);
+              await savePdfToDisk(targetUrl, finalBuffer);
 
               if (!isMounted) return;
 
-              const blob = new Blob([fullBuffer.buffer], { type: 'application/pdf' });
+              const blob = new Blob([finalBuffer], { type: 'application/pdf' });
               const bUrl = URL.createObjectURL(blob);
               setPdfSourceUrl(bUrl);
               setLoading(false);
@@ -285,16 +313,15 @@ export function FilePreviewModal({
               if (err.name === 'AbortError') return;
               console.error('Error during streaming PDF download:', err);
               if (isMounted) {
-                // Graceful fallback to direct URL
-                setPdfSourceUrl(targetUrl);
+                setError(err.message || 'Failed to download document');
                 setLoading(false);
               }
             }
           }
         })
-        .catch(() => {
+        .catch((err) => {
           if (isMounted) {
-            setPdfSourceUrl(targetUrl);
+            setError(err?.message || 'Failed to load document');
             setLoading(false);
           }
         });
@@ -512,9 +539,9 @@ export function FilePreviewModal({
 
     // Default fallback
     setLoading(false);
-  }, [file]);
+  }, [file, reloadCounter]);
 
-  // Listen for messages from the PDF viewer iframe (Close, Download)
+  // Listen for messages from the PDF viewer iframe (Close, Download, Force Reload)
   useEffect(() => {
     const handleIframeMessage = (e: MessageEvent) => {
       if (!e.data || typeof e.data !== 'object') return;
@@ -522,6 +549,8 @@ export function FilePreviewModal({
         onClose();
       } else if (e.data.action === 'downloadFile' && file) {
         onDownload(file);
+      } else if (e.data.action === 'forceReloadPdf') {
+        handleForceReload();
       } else if (e.data.action === 'slateShortcutNav') {
         const { direction, level, ctrlKey, altKey, shiftKey } = e.data;
         const targetLevel = level || (ctrlKey ? 'file' : (altKey ? 'folder' : (shiftKey ? 'course' : null)));
@@ -787,12 +816,20 @@ export function FilePreviewModal({
               <div className="p-8 text-center max-w-md bg-white border-2 border-red-500 rounded-2xl shadow-[4px_4px_0px_#EF4444] space-y-3">
                 <h3 className="font-bold text-red-600 text-sm">Preview Unavailable</h3>
                 <p className="text-xs text-neutral-600 font-mono">{error}</p>
-                <button
-                  onClick={() => onDownload(file)}
-                  className="px-4 py-2 rounded-xl bg-[#141414] text-white text-xs font-bold hover:bg-neutral-800 shadow-[2px_2px_0px_#141414]"
-                >
-                  Download File Directly
-                </button>
+                <div className="flex items-center justify-center gap-2">
+                  <button
+                    onClick={handleForceReload}
+                    className="px-4 py-2 rounded-xl bg-amber-500 text-white text-xs font-bold hover:bg-amber-600 shadow-[2px_2px_0px_#141414]"
+                  >
+                    Clear Cache & Retry
+                  </button>
+                  <button
+                    onClick={() => onDownload(file)}
+                    className="px-4 py-2 rounded-xl bg-[#141414] text-white text-xs font-bold hover:bg-neutral-800 shadow-[2px_2px_0px_#141414]"
+                  >
+                    Download File
+                  </button>
+                </div>
               </div>
             </div>
           )}
