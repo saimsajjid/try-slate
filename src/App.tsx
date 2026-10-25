@@ -2587,73 +2587,205 @@ export default function App() {
     );
   };
 
-  // Navigate next/prev folder (Week level: Alt + Arrow)
-  const handleNavigateFolder = (direction: 'next' | 'prev') => {
-    if (!activeCourse) return;
+  // Tree-aware data models for arbitrary folder/subfolder nesting
+  interface CourseSection {
+    folder: FolderItem;
+    trail: FolderItem[];
+    files: FileItem[];
+    displayName: string;
+  }
+
+  interface CourseFileEntry {
+    file: FileItem;
+    fileIndex: number;
+    totalFilesInFolder: number;
+    folder: FolderItem;
+    trail: FolderItem[];
+    displayName: string;
+  }
+
+  // Collect all folder sections that contain files in a course (recursive DFS traversal)
+  const collectCourseSections = (course: CourseItem): CourseSection[] => {
+    const sections: CourseSection[] = [];
+
+    const traverse = (folder: FolderItem, currentTrail: FolderItem[]) => {
+      const newTrail = [...currentTrail, folder];
+      const cleanFiles = getCleanFiles(folder.files);
+
+      if (cleanFiles.length > 0) {
+        sections.push({
+          folder,
+          trail: newTrail,
+          files: cleanFiles,
+          displayName: newTrail.map((f) => f.name).join(' / '),
+        });
+      }
+
+      if (folder.folders && folder.folders.length > 0) {
+        for (const sub of folder.folders) {
+          traverse(sub, newTrail);
+        }
+      }
+    };
+
+    const rootFiles = getCleanFiles(course.files);
+    if (rootFiles.length > 0) {
+      sections.push({
+        folder: { name: 'Root', files: rootFiles },
+        trail: [],
+        files: rootFiles,
+        displayName: `${course.code} (Root)`,
+      });
+    }
+
+    if (course.folders) {
+      for (const f of course.folders) {
+        traverse(f, []);
+      }
+    }
+
+    return sections;
+  };
+
+  // Collect all files across all folders in a course in linear tree order
+  const collectCourseFiles = (course: CourseItem): CourseFileEntry[] => {
+    const sections = collectCourseSections(course);
+    const allFiles: CourseFileEntry[] = [];
+
+    for (const sec of sections) {
+      for (let i = 0; i < sec.files.length; i++) {
+        allFiles.push({
+          file: sec.files[i],
+          fileIndex: i,
+          totalFilesInFolder: sec.files.length,
+          folder: sec.folder,
+          trail: sec.trail,
+          displayName: sec.displayName,
+        });
+      }
+    }
+
+    return allFiles;
+  };
+
+  // 1. File Level (Ctrl + Arrow or Ctrl + >): Traverses every file in pre-order across arbitrary subfolders
+  const handleNavigateFile = (direction: 'next' | 'prev') => {
+    if (!activeCourse) {
+      if (data.courses && data.courses.length > 0) {
+        const firstCourse = data.courses[0];
+        setActiveCourse(firstCourse);
+        const files = collectCourseFiles(firstCourse);
+        if (files.length > 0) {
+          setActiveFolderTrail(files[0].trail);
+          setPreviewFilesList(files[0].folder.files ? getCleanFiles(files[0].folder.files) : [files[0].file]);
+          setPreviewFile(files[0].file);
+          triggerToast(`${files[0].displayName} • ${files[0].file.name}`);
+        }
+      }
+      return;
+    }
+
     const delta = direction === 'next' ? 1 : -1;
+    const allCourseFiles = collectCourseFiles(activeCourse);
 
-    const parentTrail =
-      activeFolderTrail.length > 1
-        ? activeFolderTrail.slice(0, activeFolderTrail.length - 1)
-        : [];
-    const parentFolder =
-      activeFolderTrail.length > 1
-        ? parentTrail[parentTrail.length - 1]
-        : null;
+    if (allCourseFiles.length === 0) {
+      handleNavigateCourse(direction);
+      return;
+    }
 
-    const folderList = (
-      parentFolder ? parentFolder.folders || [] : activeCourse.folders || []
-    ).filter((f) => countFiles(f) > 0 || (f.folders && f.folders.length > 0));
-
-    if (folderList.length === 0) return;
-
-    let currentIndex = -1;
-    if (activeFolderTrail.length > 0) {
-      const current = activeFolderTrail[activeFolderTrail.length - 1];
-      currentIndex = folderList.findIndex(
-        (f) => f.name.toLowerCase() === current.name.toLowerCase()
+    let currentIdx = -1;
+    if (previewFile) {
+      currentIdx = allCourseFiles.findIndex(
+        (entry) =>
+          entry.file.url === previewFile.url ||
+          entry.file.name.toLowerCase() === previewFile.name.toLowerCase()
       );
     }
 
-    let nextIndex = 0;
-    if (currentIndex !== -1) {
-      nextIndex = (currentIndex + delta + folderList.length) % folderList.length;
-    } else {
-      nextIndex = delta === 1 ? 0 : folderList.length - 1;
-    }
-
-    const targetFolder = folderList[nextIndex];
-    const newTrail = [...parentTrail, targetFolder];
-    setActiveFolderTrail(newTrail);
-
-    if (previewFile) {
-      const cleanFiles = getCleanFiles(targetFolder.files);
-      if (cleanFiles.length > 0) {
-        setPreviewFilesList(cleanFiles);
-        setPreviewFile(cleanFiles[0]);
-        triggerToast(`${targetFolder.name} • ${cleanFiles[0].name}`);
+    let nextIdx = 0;
+    if (currentIdx !== -1) {
+      const targetIdx = currentIdx + delta;
+      if (targetIdx >= 0 && targetIdx < allCourseFiles.length) {
+        nextIdx = targetIdx;
       } else {
-        const subWithFiles = (targetFolder.folders || []).find((sf) => countFiles(sf) > 0);
-        if (subWithFiles) {
-          const subFiles = getCleanFiles(subWithFiles.files);
-          if (subFiles.length > 0) {
-            setActiveFolderTrail([...newTrail, subWithFiles]);
-            setPreviewFilesList(subFiles);
-            setPreviewFile(subFiles[0]);
-            triggerToast(`${targetFolder.name} / ${subWithFiles.name} • ${subFiles[0].name}`);
-            return;
-          }
-        }
-        setPreviewFile(null);
-        setPreviewFilesList([]);
-        triggerToast(`${targetFolder.name}`);
+        // Traversed past this course boundary: step to next/prev course!
+        handleNavigateCourse(direction);
+        return;
       }
     } else {
-      triggerToast(`${targetFolder.name}`);
+      nextIdx = delta === 1 ? 0 : allCourseFiles.length - 1;
+    }
+
+    const targetEntry = allCourseFiles[nextIdx];
+    setActiveFolderTrail(targetEntry.trail);
+    const targetFolderFiles = targetEntry.folder.files
+      ? getCleanFiles(targetEntry.folder.files)
+      : [targetEntry.file];
+    setPreviewFilesList(targetFolderFiles);
+    setPreviewFile(targetEntry.file);
+    triggerToast(
+      targetEntry.totalFilesInFolder > 1
+        ? `${targetEntry.displayName} • ${targetEntry.file.name} (${targetEntry.fileIndex + 1}/${targetEntry.totalFilesInFolder})`
+        : `${targetEntry.displayName} • ${targetEntry.file.name}`
+    );
+  };
+
+  // 2. Folder Level (Alt + Arrow or Alt + >): Jumps between folder sections across arbitrary subfolders
+  const handleNavigateFolder = (direction: 'next' | 'prev') => {
+    if (!activeCourse) return;
+    const delta = direction === 'next' ? 1 : -1;
+    const sections = collectCourseSections(activeCourse);
+
+    if (sections.length === 0) {
+      triggerToast(`${activeCourse.code}: No file sections`);
+      return;
+    }
+
+    let currentSecIdx = -1;
+    if (previewFile) {
+      currentSecIdx = sections.findIndex((sec) =>
+        sec.files.some(
+          (f) =>
+            f.url === previewFile.url ||
+            f.name.toLowerCase() === previewFile.name.toLowerCase()
+        )
+      );
+    }
+    if (currentSecIdx === -1 && activeFolderTrail.length > 0) {
+      const currentFolder = activeFolderTrail[activeFolderTrail.length - 1];
+      currentSecIdx = sections.findIndex(
+        (sec) =>
+          sec.folder.name.toLowerCase() === currentFolder.name.toLowerCase() ||
+          sec.trail.some((tf) => tf.name.toLowerCase() === currentFolder.name.toLowerCase())
+      );
+    }
+
+    let nextSecIdx = 0;
+    if (currentSecIdx !== -1) {
+      const targetSec = currentSecIdx + delta;
+      if (targetSec >= 0 && targetSec < sections.length) {
+        nextSecIdx = targetSec;
+      } else {
+        handleNavigateCourse(direction);
+        return;
+      }
+    } else {
+      nextSecIdx = delta === 1 ? 0 : sections.length - 1;
+    }
+
+    const targetSection = sections[nextSecIdx];
+    setActiveFolderTrail(targetSection.trail);
+
+    if (previewFile) {
+      setPreviewFilesList(targetSection.files);
+      setPreviewFile(targetSection.files[0]);
+      triggerToast(`${targetSection.displayName} • ${targetSection.files[0].name}`);
+    } else {
+      triggerToast(`${targetSection.displayName}`);
     }
   };
 
-  // Navigate next/prev course (Subject level: Shift + Arrow)
+  // 3. Subject Level (Shift + Arrow or Shift + >): Switches course and opens matching or first section
   const handleNavigateCourse = (direction: 'next' | 'prev') => {
     const courses = data.courses || [];
     if (courses.length === 0) return;
@@ -2676,112 +2808,38 @@ export default function App() {
     const targetCourse = courses[nextIndex];
     setActiveCourse(targetCourse);
 
-    if (previewFile) {
-      let matchedFolder: FolderItem | null = null;
-      if (currentFolder) {
-        matchedFolder =
-          (targetCourse.folders || []).find(
-            (f) =>
-              f.name.toLowerCase() === currentFolder.name.toLowerCase() &&
-              (countFiles(f) > 0 || (f.files && f.files.length > 0))
-          ) || null;
-      }
-      if (!matchedFolder) {
-        matchedFolder =
-          (targetCourse.folders || []).find(
-            (f) => countFiles(f) > 0 || (f.files && f.files.length > 0)
-          ) || null;
-      }
+    const sections = collectCourseSections(targetCourse);
 
-      if (matchedFolder) {
-        const cleanFiles = getCleanFiles(matchedFolder.files);
-        if (cleanFiles.length > 0) {
-          setActiveFolderTrail([matchedFolder]);
-          setPreviewFilesList(cleanFiles);
-          setPreviewFile(cleanFiles[0]);
-          triggerToast(`${targetCourse.code} • ${matchedFolder.name} • ${cleanFiles[0].name}`);
-          return;
-        }
-        const subWithFiles = (matchedFolder.folders || []).find((sf) => countFiles(sf) > 0);
-        if (subWithFiles) {
-          const subClean = getCleanFiles(subWithFiles.files);
-          if (subClean.length > 0) {
-            setActiveFolderTrail([matchedFolder, subWithFiles]);
-            setPreviewFilesList(subClean);
-            setPreviewFile(subClean[0]);
-            triggerToast(`${targetCourse.code} • ${subWithFiles.name} • ${subClean[0].name}`);
-            return;
-          }
-        }
-      }
-
-      const rootFiles = getCleanFiles(targetCourse.files);
-      if (rootFiles.length > 0) {
-        setActiveFolderTrail([]);
-        setPreviewFilesList(rootFiles);
-        setPreviewFile(rootFiles[0]);
-        triggerToast(`${targetCourse.code} • ${rootFiles[0].name}`);
-        return;
-      }
-
+    if (sections.length === 0) {
       setActiveFolderTrail([]);
       setPreviewFile(null);
       setPreviewFilesList([]);
       triggerToast(`${targetCourse.code}: ${targetCourse.title}`);
-    } else {
-      setActiveFolderTrail([]);
-      triggerToast(`${targetCourse.code}: ${targetCourse.title}`);
-    }
-  };
-
-  // Navigate next/prev file (File level: Ctrl + Arrow or Ctrl + >)
-  const handleNavigateFile = (direction: 'next' | 'prev') => {
-    const delta = direction === 'next' ? 1 : -1;
-
-    // Case 1: When preview modal is open
-    if (previewFile) {
-      const filesList =
-        previewFilesList.length > 0
-          ? previewFilesList
-          : visibleFiles.length > 0
-          ? visibleFiles
-          : [];
-
-      if (filesList.length > 1) {
-        const currentIdx = filesList.findIndex(
-          (f) =>
-            f.url === previewFile.url ||
-            f.name.toLowerCase() === previewFile.name.toLowerCase()
-        );
-
-        if (currentIdx !== -1) {
-          const nextIdx = currentIdx + delta;
-          if (nextIdx >= 0 && nextIdx < filesList.length) {
-            const nextFile = filesList[nextIdx];
-            setPreviewFile(nextFile);
-            triggerToast(`${nextFile.name} (${nextIdx + 1}/${filesList.length})`);
-            return;
-          }
-        }
-      }
-
-      // If at boundary of folder (or folder only has 1 file): step to next/prev folder's file
-      handleNavigateFolder(direction);
       return;
     }
 
-    // Case 2: When preview modal is closed (browsing on dashboard/folder page)
-    if (visibleFiles.length > 0) {
-      let currentIdx = keyboardIndex - visibleFolders.length;
-      if (currentIdx < 0 || currentIdx >= visibleFiles.length) {
-        currentIdx = delta === 1 ? -1 : visibleFiles.length;
+    // Match current week or section name if possible (e.g. Week 02)
+    let matchedSection = sections[0];
+    if (activeFolderTrail.length > 0) {
+      const currentFolderName = activeFolderTrail[activeFolderTrail.length - 1].name.toLowerCase();
+      const found = sections.find((sec) =>
+        sec.trail.some((tf) => tf.name.toLowerCase() === currentFolderName)
+      );
+      if (found) {
+        matchedSection = found;
       }
-      const nextIdx = (currentIdx + delta + visibleFiles.length) % visibleFiles.length;
-      setKeyboardIndex(visibleFolders.length + nextIdx);
-      handleOpenPreview(visibleFiles[nextIdx], visibleFiles);
-      triggerToast(visibleFiles[nextIdx].name);
-    } else if (activeCourse) {
-      handleNavigateFolder(direction);
+    }
+
+    setActiveFolderTrail(matchedSection.trail);
+
+    if (previewFile) {
+      setPreviewFilesList(matchedSection.files);
+      setPreviewFile(matchedSection.files[0]);
+      triggerToast(
+        `${targetCourse.code} • ${matchedSection.displayName} • ${matchedSection.files[0].name}`
+      );
+    } else {
+      triggerToast(`${targetCourse.code}: ${targetCourse.title}`);
     }
   };
 
