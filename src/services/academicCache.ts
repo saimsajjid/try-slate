@@ -72,6 +72,17 @@ export async function isPdfOnDisk(url: string): Promise<boolean> {
 /**
  * Read PDF ArrayBuffer directly from local device disk (Zero RAM retention)
  */
+function isBufferValidPdf(buffer: ArrayBuffer): boolean {
+  if (buffer.byteLength < 100) return false;
+  const tailStart = Math.max(0, buffer.byteLength - 512);
+  const tailBytes = new Uint8Array(buffer, tailStart, buffer.byteLength - tailStart);
+  let tailStr = '';
+  for (let i = 0; i < tailBytes.length; i++) {
+    tailStr += String.fromCharCode(tailBytes[i]);
+  }
+  return tailStr.includes('%%EOF');
+}
+
 export async function getPdfFromDisk(url: string): Promise<ArrayBuffer | null> {
   if (typeof window === 'undefined') return null;
 
@@ -81,7 +92,12 @@ export async function getPdfFromDisk(url: string): Promise<ArrayBuffer | null> {
       const cache = await caches.open(CACHE_NAME);
       const match = await cache.match(url, { ignoreSearch: true });
       if (match) {
-        return await match.arrayBuffer();
+        const buf = await match.arrayBuffer();
+        if (isBufferValidPdf(buf)) {
+          return buf;
+        }
+        // Truncated/corrupt cache detected: automatically purge from disk
+        await cache.delete(url, { ignoreSearch: true });
       }
     } catch (e) {
       console.warn('Cache API read error, trying IndexedDB:', e);
@@ -93,16 +109,19 @@ export async function getPdfFromDisk(url: string): Promise<ArrayBuffer | null> {
     try {
       const db = await openIndexedDb();
       return new Promise<ArrayBuffer | null>((resolve) => {
-        const tx = db.transaction(IDB_STORE, 'readonly');
+        const tx = db.transaction(IDB_STORE, 'readwrite');
         const store = tx.objectStore(IDB_STORE);
         const req = store.get(url);
-        req.onsuccess = () => {
+        req.onsuccess = async () => {
           const val = req.result;
-          if (val instanceof ArrayBuffer) {
-            resolve(val);
-          } else if (val instanceof Blob) {
-            val.arrayBuffer().then(resolve).catch(() => resolve(null));
+          let buf: ArrayBuffer | null = null;
+          if (val instanceof ArrayBuffer) buf = val;
+          else if (val instanceof Blob) buf = await val.arrayBuffer();
+
+          if (buf && isBufferValidPdf(buf)) {
+            resolve(buf);
           } else {
+            if (buf) store.delete(url); // purge corrupt entry
             resolve(null);
           }
         };
