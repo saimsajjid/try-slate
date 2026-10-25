@@ -927,7 +927,99 @@
       "tint": "#FDF4FF",
       "accent": "#9333EA",
       "doodle": "scroll",
-      "folders": [],
+      "folders": [
+        {
+          "name": "Reference Materials",
+          "folders": [
+            {
+              "name": "Primary Book",
+              "files": [
+                {
+                  "name": "Muallim_ul_Quran_Volume_01_Units_1-3.pdf",
+                  "size": "11.6 MB",
+                  "type": "pdf",
+                  "url": "/academic-files/Courses/SS-104_Understanding_of_Quran_I/Reference_Materials/Primary Book/Muallim_ul_Quran_Volume_01_Units_1-3.pdf"
+                }
+              ]
+            },
+            {
+              "name": "Reference Books",
+              "files": [
+                {
+                  "name": "Muallim_ul_Quran_Volume_02_Units_4-5.pdf",
+                  "size": "11.7 MB",
+                  "type": "pdf",
+                  "url": "/academic-files/Courses/SS-104_Understanding_of_Quran_I/Reference_Materials/Reference Books/Muallim_ul_Quran_Volume_02_Units_4-5.pdf"
+                },
+                {
+                  "name": "Muallim_ul_Quran_Volume_03_Unit_6.pdf",
+                  "size": "10.4 MB",
+                  "type": "pdf",
+                  "url": "/academic-files/Courses/SS-104_Understanding_of_Quran_I/Reference_Materials/Reference Books/Muallim_ul_Quran_Volume_03_Unit_6.pdf"
+                }
+              ]
+            }
+          ],
+          "files": []
+        },
+        {
+          "name": "Teaching Slides",
+          "files": [
+            {
+              "name": "Teaching_Slides_Unit_01.pdf",
+              "size": "42.7 MB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/SS-104_Understanding_of_Quran_I/Teaching_Slides/Teaching_Slides_Unit_01.pdf"
+            },
+            {
+              "name": "Teaching_Slides_Unit_02.pdf",
+              "size": "30.2 MB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/SS-104_Understanding_of_Quran_I/Teaching_Slides/Teaching_Slides_Unit_02.pdf"
+            },
+            {
+              "name": "Teaching_Slides_Unit_03.pdf",
+              "size": "21.9 MB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/SS-104_Understanding_of_Quran_I/Teaching_Slides/Teaching_Slides_Unit_03.pdf"
+            },
+            {
+              "name": "Teaching_Slides_Unit_04.pdf",
+              "size": "10.1 MB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/SS-104_Understanding_of_Quran_I/Teaching_Slides/Teaching_Slides_Unit_04.pdf"
+            },
+            {
+              "name": "Teaching_Slides_Unit_05.pdf",
+              "size": "19.0 MB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/SS-104_Understanding_of_Quran_I/Teaching_Slides/Teaching_Slides_Unit_05.pdf"
+            },
+            {
+              "name": "Teaching_Slides_Unit_06.pdf",
+              "size": "25.1 MB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/SS-104_Understanding_of_Quran_I/Teaching_Slides/Teaching_Slides_Unit_06.pdf"
+            }
+          ]
+        },
+        {
+          "name": "Week 01",
+          "files": []
+        },
+        {
+          "name": "Week 02",
+          "files": []
+        },
+        {
+          "name": "Week 03",
+          "files": []
+        },
+        {
+          "name": "Week 04",
+          "files": []
+        }
+      ],
       "files": []
     }
   ]
