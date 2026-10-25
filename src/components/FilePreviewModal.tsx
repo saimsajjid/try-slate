@@ -602,8 +602,8 @@ export function FilePreviewModal({
       >
         {/* Top Header Bar for non-PDF files (DOCX, PPTX, Images) */}
         {ext !== 'pdf' && (
-          <div className="bg-[#141417] border-b border-[#222226] px-4 py-2 flex items-center justify-between gap-3 shrink-0">
-            <div className="flex items-center gap-2.5 min-w-0">
+          <div className="bg-[#141417] border-b border-[#222226] px-3 sm:px-4 py-2 flex items-center justify-between gap-2.5 shrink-0">
+            <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
               <span
                 className={`text-[10px] font-mono font-bold px-2 py-0.5 border rounded uppercase shrink-0 ${
                   ext === 'docx' || ext === 'doc'
@@ -617,8 +617,8 @@ export function FilePreviewModal({
               >
                 {ext}
               </span>
-              <span className="font-medium text-xs sm:text-sm text-zinc-200 truncate tracking-tight">{file.name}</span>
-              <span className="text-[11px] font-mono text-zinc-500 shrink-0">({file.size})</span>
+              <span className="font-medium text-xs sm:text-sm text-zinc-200 truncate tracking-tight min-w-0" title={file.name}>{file.name}</span>
+              <span className="text-[11px] font-mono text-zinc-500 shrink-0 hidden xs:inline">({file.size})</span>
 
               {/* Photo Gallery Counter & Quick Arrows */}
               {hasImageGallery && (
@@ -646,16 +646,16 @@ export function FilePreviewModal({
               )}
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <button
                 onClick={() => onDownload(file)}
-                className="h-7 sm:h-8 px-3 rounded-lg text-xs font-medium bg-white/[0.06] hover:bg-white/[0.12] text-zinc-200 hover:text-white border border-white/10 transition-all active:scale-95 flex items-center gap-1.5"
+                className="h-8 px-2.5 sm:px-3 rounded-lg text-xs font-medium bg-white/[0.06] hover:bg-white/[0.12] text-zinc-200 hover:text-white border border-white/10 transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer"
               >
                 Download
               </button>
               <button
                 onClick={onClose}
-                className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.1] border border-transparent hover:border-white/10 flex items-center justify-center text-sm transition-all"
+                className="w-8 h-8 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.1] border border-transparent hover:border-white/10 flex items-center justify-center text-base transition-all cursor-pointer"
                 title="Close Preview (Esc)"
               >
                 ✕
@@ -668,7 +668,7 @@ export function FilePreviewModal({
         <div className="flex-1 w-full min-h-0 min-w-0 bg-neutral-900 overflow-hidden relative flex flex-col">
           {loading && (
             <div className="flex-1 flex items-center justify-center p-4 bg-[#0A0A0C]">
-              <div className="bg-[#141417] border border-[#222226] rounded-2xl p-6 sm:p-8 max-w-md w-full flex flex-col items-center text-center shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+              <div className="bg-[#141417] border border-[#222226] rounded-2xl p-4 sm:p-8 max-w-md w-full flex flex-col items-center text-center shadow-2xl animate-in fade-in zoom-in-95 duration-200">
                 {/* Slate Mascot Badge */}
                 <div className="relative w-16 h-16 mb-4 flex items-center justify-center">
                   <div className="absolute -inset-1.5 rounded-2xl bg-amber-500/20 animate-pulse" />
@@ -755,7 +755,7 @@ export function FilePreviewModal({
                     <button
                       onClick={handlePrev}
                       disabled={!hasPrev}
-                      className="absolute left-3 sm:left-5 top-1/2 -translate-y-1/2 z-30 w-11 h-11 sm:w-13 sm:h-13 rounded-2xl bg-white border-2 border-[#141414] shadow-[3px_3px_0px_#141414] hover:shadow-[4.5px_4.5px_0px_#141414] hover:-translate-y-[calc(50%+2px)] active:scale-95 disabled:opacity-20 disabled:pointer-events-none transition-all flex items-center justify-center cursor-pointer text-[#141414] group"
+                      className="absolute left-2 sm:left-5 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-13 sm:h-13 rounded-xl sm:rounded-2xl bg-white border-2 border-[#141414] shadow-[2px_2px_0px_#141414] sm:shadow-[3px_3px_0px_#141414] hover:shadow-[4.5px_4.5px_0px_#141414] hover:-translate-y-[calc(50%+2px)] active:scale-95 disabled:opacity-20 disabled:pointer-events-none transition-all flex items-center justify-center cursor-pointer text-[#141414] group"
                       title="Previous Photo (Left Arrow Key)"
                       aria-label="Previous Photo"
                     >
@@ -770,7 +770,7 @@ export function FilePreviewModal({
                     <button
                       onClick={handleNext}
                       disabled={!hasNext}
-                      className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 z-30 w-11 h-11 sm:w-13 sm:h-13 rounded-2xl bg-white border-2 border-[#141414] shadow-[3px_3px_0px_#141414] hover:shadow-[4.5px_4.5px_0px_#141414] hover:-translate-y-[calc(50%+2px)] active:scale-95 disabled:opacity-20 disabled:pointer-events-none transition-all flex items-center justify-center cursor-pointer text-[#141414] group"
+                      className="absolute right-2 sm:right-5 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-13 sm:h-13 rounded-xl sm:rounded-2xl bg-white border-2 border-[#141414] shadow-[2px_2px_0px_#141414] sm:shadow-[3px_3px_0px_#141414] hover:shadow-[4.5px_4.5px_0px_#141414] hover:-translate-y-[calc(50%+2px)] active:scale-95 disabled:opacity-20 disabled:pointer-events-none transition-all flex items-center justify-center cursor-pointer text-[#141414] group"
                       title="Next Photo (Right Arrow Key)"
                       aria-label="Next Photo"
                     >
@@ -781,7 +781,7 @@ export function FilePreviewModal({
                   )}
 
                   {/* Zoom Controls Bar */}
-                  <div className="absolute top-4 right-4 z-20 flex items-center gap-2 bg-white/95 backdrop-blur border-2 border-[#141414] rounded-xl px-2 py-1 shadow-[2px_2px_0px_#141414]">
+                  <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-20 flex items-center gap-1 sm:gap-2 bg-white/95 backdrop-blur border-2 border-[#141414] rounded-xl px-1.5 sm:px-2 py-0.5 sm:py-1 shadow-[2px_2px_0px_#141414]">
                     <button
                       onClick={() => setImageZoom((z) => Math.max(0.5, z - 0.25))}
                       className="px-2 py-0.5 text-xs font-bold font-mono hover:bg-neutral-100 rounded"
@@ -806,17 +806,24 @@ export function FilePreviewModal({
                     </button>
                   </div>
 
-                  {/* Bottom Keyboard Navigation Hint */}
+                  {/* Bottom Keyboard Navigation Hint (desktop) & Mobile Counter */}
                   {hasImageGallery && (
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-neutral-900/90 text-neutral-100 px-3.5 py-1.5 rounded-full text-xs font-mono border border-neutral-700 shadow-md">
-                      <span className="font-bold text-amber-400">Navigate:</span>
-                      <div className="flex items-center gap-1">
-                        <kbd className="px-1.5 py-0.5 bg-neutral-800 border border-neutral-600 rounded text-[11px] font-bold">←</kbd>
-                        <kbd className="px-1.5 py-0.5 bg-neutral-800 border border-neutral-600 rounded text-[11px] font-bold">→</kbd>
+                    <>
+                      <div className="hidden sm:flex absolute bottom-4 left-1/2 -translate-x-1/2 z-20 items-center gap-2 bg-neutral-900/90 text-neutral-100 px-3.5 py-1.5 rounded-full text-xs font-mono border border-neutral-700 shadow-md">
+                        <span className="font-bold text-amber-400">Navigate:</span>
+                        <div className="flex items-center gap-1">
+                          <kbd className="px-1.5 py-0.5 bg-neutral-800 border border-neutral-600 rounded text-[11px] font-bold">←</kbd>
+                          <kbd className="px-1.5 py-0.5 bg-neutral-800 border border-neutral-600 rounded text-[11px] font-bold">→</kbd>
+                        </div>
+                        <span className="text-neutral-500">|</span>
+                        <span className="font-semibold">{currentImageIndex + 1} of {imageFiles.length}</span>
                       </div>
-                      <span className="text-neutral-500">|</span>
-                      <span className="font-semibold">{currentImageIndex + 1} of {imageFiles.length}</span>
-                    </div>
+                      <div className="sm:hidden absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-neutral-900/90 text-neutral-200 px-3 py-1 rounded-full text-xs font-mono border border-neutral-700 shadow-md">
+                        <span className="font-semibold text-amber-400">{currentImageIndex + 1}</span>
+                        <span className="text-neutral-500">/</span>
+                        <span>{imageFiles.length}</span>
+                      </div>
+                    </>
                   )}
 
                   <div className="w-full h-full flex items-center justify-center overflow-auto p-4">
@@ -832,8 +839,8 @@ export function FilePreviewModal({
 
               {/* 3. MARKDOWN & CODE VIEWER */}
               {(ext === 'md' || ext === 'txt' || ext === 'py' || ext === 'json') && markdownHtml && (
-                <div className="w-full h-full overflow-y-auto bg-neutral-200/90 p-4 sm:p-8">
-                  <div className="bg-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-xl max-w-4xl w-full mx-auto p-6 sm:p-10 md:p-14 border-2 border-[#141414] my-4">
+                <div className="w-full h-full overflow-y-auto bg-neutral-200/90 p-2.5 sm:p-8">
+                  <div className="bg-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-xl max-w-4xl w-full mx-auto p-4 sm:p-10 md:p-14 border-2 border-[#141414] my-2 sm:my-4">
                     <div
                       className="slate-markdown-body"
                       dangerouslySetInnerHTML={{ __html: markdownHtml }}
@@ -844,10 +851,10 @@ export function FilePreviewModal({
 
               {/* 4. WORD DOCUMENT (.docx) VIEWER */}
               {ext === 'docx' && (
-                <div className="w-full h-full overflow-y-auto bg-neutral-200/90 p-4 sm:p-8">
+                <div className="w-full h-full overflow-y-auto bg-neutral-200/90 p-2.5 sm:p-8">
                   <div
                     ref={docxContainerRef}
-                    className="bg-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-xl max-w-4xl w-full mx-auto p-4 md:p-10 border-2 border-[#141414] my-4"
+                    className="bg-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-xl max-w-4xl w-full mx-auto p-3.5 sm:p-6 md:p-10 border-2 border-[#141414] my-2 sm:my-4"
                   />
                 </div>
               )}

@@ -2858,8 +2858,8 @@ export default function App() {
       )}
 
       {/* 1. MINIMALIST APPROVED HEADER */}
-      <header className="bg-white border-b-2 border-[#141414] px-6 lg:px-12 py-3.5 sticky top-0 z-40 shadow-xs">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
+      <header className="bg-white border-b-2 border-[#141414] px-4 sm:px-6 lg:px-12 py-3 sm:py-3.5 sticky top-0 z-40 shadow-xs">
+        <div className="max-w-5xl mx-auto flex items-center justify-between gap-2">
           {/* Interactive Logo & Slate Mascot */}
           <InteractiveSlateLogo
             isCompanionActive={companionActive}
@@ -2871,21 +2871,21 @@ export default function App() {
           />
 
           {/* Simple Date in Apple / British Format */}
-          <div className="text-xs font-mono font-medium text-neutral-500">
+          <div className="text-[11px] sm:text-xs font-mono font-medium text-neutral-500 shrink-0">
             {formattedToday}
           </div>
         </div>
       </header>
 
       {/* 2. MAIN CONTENT AREA */}
-      <main className="max-w-5xl mx-auto px-6 py-6 space-y-6 flex-1 w-full">
+      <main className="max-w-5xl mx-auto px-3.5 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 flex-1 w-full min-w-0">
         {/* ============================================================== */}
         {/* VIEW 1: HOME DASHBOARD (Radar + Course Cards)                 */}
         {/* ============================================================== */}
         {!activeCourse && (
           <>
             {/* PILLAR 1: LIVE TRANSIT TIMELINE */}
-            <section className="bg-white border-2 border-[#141414] rounded-2xl p-5 md:p-6 shadow-[3px_3px_0px_#141414] space-y-5 min-h-[340px]">
+            <section className="bg-white border-2 border-[#141414] rounded-2xl p-3.5 sm:p-5 md:p-6 shadow-[3px_3px_0px_#141414] space-y-4 sm:space-y-5 min-h-[300px]">
               {/* Header with Day Switcher */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-200 pb-3.5">
                 <div className="flex items-center gap-2.5">
@@ -2903,7 +2903,7 @@ export default function App() {
                 </div>
 
                 {/* Sexy Sliding Segmented Day Switcher */}
-                <div className="relative grid grid-cols-5 bg-neutral-100 p-1 rounded-xl border border-neutral-200 w-full sm:w-72 select-none">
+                <div className="relative grid grid-cols-5 bg-neutral-100 p-0.5 sm:p-1 rounded-xl border border-neutral-200 w-full sm:w-72 select-none">
                   {/* The Fluid Sliding Dark Indicator Pill */}
                   <div
                     className="absolute top-1 bottom-1 rounded-lg bg-[#141414] shadow-xs pointer-events-none transition-transform duration-200 ease-out"
@@ -2923,7 +2923,7 @@ export default function App() {
                       <button
                         key={day}
                         onClick={() => handleSelectDay(day)}
-                        className={`relative z-10 py-1 px-1.5 rounded-lg text-xs font-mono font-bold transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 ${
+                        className={`relative z-10 py-1.5 px-0.5 sm:px-1.5 rounded-lg text-[11px] sm:text-xs font-mono font-bold transition-all duration-200 cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 active:scale-95 ${
                           isSelected
                             ? 'text-white'
                             : 'text-neutral-500 hover:text-neutral-900'
@@ -2946,32 +2946,33 @@ export default function App() {
               {nextUpcomingClass && (
                 <div
                   onClick={() => handleSelectDay(nextUpcomingClass.dayKey)}
-                  className="bg-neutral-50/90 hover:bg-neutral-100/90 border border-neutral-200/90 rounded-xl px-3.5 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 transition-all cursor-pointer group select-none"
+                  className="bg-neutral-50/90 hover:bg-neutral-100/90 border border-neutral-200/90 rounded-xl p-3 sm:px-3.5 sm:py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 transition-all cursor-pointer group select-none min-w-0"
                   title="Click to jump to this day's schedule"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
                     <span className="w-2 h-2 rounded-full bg-[#FF6D00] shrink-0 animate-pulse" />
-                    <div className="text-xs truncate">
-                      <span className="text-neutral-500 font-medium">Next: </span>
-                      <span className="font-bold text-[#141414] group-hover:text-[#FF6D00] transition-colors">
-                        {nextUpcomingClass.slot.title}
-                      </span>
-                      <span className="text-neutral-300 mx-1.5">&bull;</span>
-                      <span className="font-mono text-neutral-500">
+                    <div className="text-xs min-w-0 flex-1 leading-snug">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-neutral-500 font-medium shrink-0">Next:</span>
+                        <span className="font-bold text-[#141414] group-hover:text-[#FF6D00] transition-colors truncate">
+                          {nextUpcomingClass.slot.title}
+                        </span>
+                      </div>
+                      <div className="font-mono text-[11px] text-neutral-500 mt-0.5 truncate">
                         {nextUpcomingClass.isToday
                           ? `Today at ${nextUpcomingClass.slot.startStr}`
                           : nextUpcomingClass.offsetDays === 1
                           ? `Tomorrow at ${nextUpcomingClass.slot.startStr}`
                           : `${nextUpcomingClass.dayKey.charAt(0).toUpperCase() + nextUpcomingClass.dayKey.slice(1)} at ${nextUpcomingClass.slot.startStr}`}
-                      </span>
+                      </div>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
-                    <span className="font-mono font-bold text-xs text-[#FF6D00] bg-orange-50 border border-orange-200/80 px-2.5 py-0.5 rounded-full">
+                    <span className="font-mono font-bold text-[11px] sm:text-xs text-[#FF6D00] bg-orange-50 border border-orange-200/80 px-2 py-0.5 rounded-full">
                       in {formatRelativeCountdown(nextUpcomingClass.diffMinutes)}
                     </span>
-                    <span className="font-mono text-xs font-bold text-[#141414] bg-white border border-neutral-300 px-2 py-0.5 rounded-md shadow-2xs">
+                    <span className="font-mono text-[11px] sm:text-xs font-bold text-[#141414] bg-white border border-neutral-300 px-2 py-0.5 rounded-md shadow-2xs">
                       {nextUpcomingClass.slot.room}
                     </span>
                   </div>
@@ -2992,7 +2993,7 @@ export default function App() {
                         </div>
 
                         {/* Break Pill */}
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neutral-100/90 border border-neutral-200 text-xs text-neutral-600 shadow-2xs">
+                        <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full bg-neutral-100/90 border border-neutral-200 text-xs text-neutral-600 shadow-2xs max-w-full">
                           <svg
                             className="w-3.5 h-3.5 text-neutral-400 shrink-0"
                             fill="none"
@@ -3021,9 +3022,9 @@ export default function App() {
                   const isDone = status === 'completed';
 
                   return (
-                    <div key={`slot-${item.slotIndex}`} className="flex items-center gap-3 sm:gap-4">
+                    <div key={`slot-${item.slotIndex}`} className="flex items-center gap-2 sm:gap-4 min-w-0">
                       {/* Timeline Rail Node */}
-                      <div className="w-6 sm:w-8 shrink-0 flex items-center justify-center relative self-stretch">
+                      <div className="w-5 sm:w-8 shrink-0 flex items-center justify-center relative self-stretch">
                         {/* Vertical line connecting up/down */}
                         {!item.isFirst && (
                           <div className="absolute top-0 bottom-1/2 left-1/2 -translate-x-1/2 w-0.5 bg-neutral-200 z-0" />
@@ -3061,7 +3062,7 @@ export default function App() {
 
                       {/* Content Card */}
                       <div
-                        className={`flex-1 rounded-xl p-3.5 sm:p-4 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                        className={`flex-1 rounded-xl p-3 sm:p-4 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 min-w-0 ${
                           isLive
                             ? 'bg-[#F0FDF4] border-2 border-[#141414] shadow-[2.5px_2.5px_0px_#141414]'
                             : isNext
@@ -3072,9 +3073,9 @@ export default function App() {
                         }`}
                       >
                         {/* Left Side: Time + Subject Info */}
-                        <div className="flex items-center gap-3.5">
+                        <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0 flex-1">
                           {/* Time Column with Unified Duration */}
-                          <div className="shrink-0 text-left min-w-[76px]">
+                          <div className="shrink-0 text-left min-w-[68px] sm:min-w-[76px]">
                             <span
                               className={`block font-mono font-bold text-xs ${
                                 isLive
@@ -3116,32 +3117,32 @@ export default function App() {
                           />
 
                           {/* Subject & Instructor */}
-                          <div>
-                            <div className="flex items-center gap-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                               <h3
-                                className={`font-bold text-sm ${
+                                className={`font-bold text-xs sm:text-sm leading-snug break-words ${
                                   isDone ? 'text-neutral-700' : 'text-[#141414]'
                                 }`}
                               >
                                 {slot.title}
                               </h3>
                               {isLive && (
-                                <span className="text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-600 text-white px-2 py-0.5 rounded-full animate-pulse">
+                                <span className="text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-600 text-white px-2 py-0.5 rounded-full animate-pulse shrink-0">
                                   Happening Now
                                 </span>
                               )}
                               {isNext && (
-                                <span className="text-[10px] font-mono font-bold uppercase tracking-wider bg-[#FF6D00] text-white px-2.5 py-0.5 rounded-full inline-flex items-center">
+                                <span className="text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-wider bg-[#FF6D00] text-white px-2.5 py-0.5 rounded-full inline-flex items-center shrink-0">
                                   Up Next
                                 </span>
                               )}
                               {isDone && (
-                                <span className="text-[10px] font-mono font-semibold text-neutral-400">
+                                <span className="text-[9px] sm:text-[10px] font-mono font-semibold text-neutral-400 shrink-0">
                                   Completed
                                 </span>
                               )}
                             </div>
-                            <p className="text-xs text-neutral-500 mt-0.5">
+                            <p className="text-[11px] sm:text-xs text-neutral-500 mt-0.5 truncate">
                               {slot.instructor}
                             </p>
                           </div>
@@ -3150,7 +3151,7 @@ export default function App() {
                         {/* Right Side: High-Visibility Destination Room Tag */}
                         <div className="flex items-center justify-end shrink-0 sm:self-center">
                           <div
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-xs font-bold transition-all ${
+                            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg font-mono text-[11px] sm:text-xs font-bold transition-all ${
                               isLive
                                 ? 'bg-emerald-900 text-white shadow-xs'
                                 : isNext
@@ -3243,11 +3244,11 @@ export default function App() {
                       <div className="space-y-2">
                         {/* Header Row */}
                         <div className="flex items-start justify-between gap-2">
-                          <span className="text-xs text-neutral-600 font-medium">
+                          <span className="text-xs text-neutral-600 font-medium truncate max-w-[170px] sm:max-w-none">
                             {course.instructor}
                           </span>
                           <span
-                            className="text-xs font-bold"
+                            className="text-xs font-bold shrink-0"
                             style={{ fontFamily: '"Caveat", cursive', color: course.accent, fontSize: '15px' }}
                           >
                             [ {course.folders.filter((f) => countFiles(f) > 0 || (f.folders && f.folders.length > 0)).length} Folders • {totalFiles} Files ]
@@ -3297,11 +3298,11 @@ export default function App() {
             <div className="flex items-center justify-between gap-3 px-0.5">
               <button
                 onClick={handleBack}
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white border-2 border-[#141414] shadow-[2px_2px_0px_#141414] hover:shadow-[3px_3px_0px_#141414] hover:-translate-x-0.5 transition-all text-xs font-bold text-[#141414] cursor-pointer active:scale-95 group"
+                className="inline-flex items-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-xl bg-white border-2 border-[#141414] shadow-[2px_2px_0px_#141414] hover:shadow-[3px_3px_0px_#141414] hover:-translate-x-0.5 transition-all text-xs font-bold text-[#141414] cursor-pointer active:scale-95 group max-w-full truncate"
                 title="Go back (Backspace)"
               >
-                <span className="text-sm font-mono group-hover:-translate-x-0.5 transition-transform">←</span>
-                <span>
+                <span className="text-sm font-mono group-hover:-translate-x-0.5 transition-transform shrink-0">←</span>
+                <span className="truncate">
                   {activeFolderTrail.length > 0
                     ? `Back to ${activeFolderTrail.length === 1 ? activeCourse.title : activeFolderTrail[activeFolderTrail.length - 2].name}`
                     : 'All Courses'}
@@ -3363,22 +3364,22 @@ export default function App() {
             {/* Course Header Banner (hidden on Recommendations for a clean, spacious page) */}
             {!currentFolder?.name.toLowerCase().includes('recommend') && (
               <div
-                className="border-2 border-[#141414] rounded-2xl p-5 shadow-[3px_3px_0px_#141414] flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                className="border-2 border-[#141414] rounded-2xl p-4 sm:p-5 shadow-[3px_3px_0px_#141414] flex items-center justify-between gap-3 min-w-0"
                 style={{ backgroundColor: activeCourse.tint }}
               >
-                <div>
-                  <div className="text-xs text-neutral-600 font-medium mb-1">
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs text-neutral-600 font-medium mb-1 truncate">
                     {activeCourse.instructor}
                   </div>
                   <h1
-                    className="text-xl md:text-2xl font-bold text-[#141414]"
+                    className="text-base sm:text-xl md:text-2xl font-bold text-[#141414] leading-tight break-words"
                     style={{ fontFamily: '"Space Grotesk", sans-serif' }}
                   >
                     {currentFolder ? currentFolder.name : activeCourse.title}
                   </h1>
                 </div>
 
-                <div className="bg-white/90 border border-black/15 rounded-xl p-1.5 self-start sm:self-auto shadow-xs group cursor-pointer hover:shadow-[2px_2px_0px_#141414] transition-all">
+                <div className="bg-white/90 border border-black/15 rounded-xl p-1.5 shrink-0 shadow-xs group cursor-pointer hover:shadow-[2px_2px_0px_#141414] transition-all">
                   <CourseDoodle code={activeCourse.code} />
                 </div>
               </div>
@@ -3410,19 +3411,19 @@ export default function App() {
                           handleOpenFolder(folder);
                           setKeyboardIndex(-1);
                         }}
-                        className={`bg-white border-2 border-[#141414] rounded-xl p-3.5 px-4 shadow-[2px_2px_0px_#141414] hover:shadow-[3px_3px_0px_#141414] transition-all cursor-pointer flex items-center justify-between group ${
+                        className={`bg-white border-2 border-[#141414] rounded-xl p-3 sm:p-3.5 px-3.5 sm:px-4 shadow-[2px_2px_0px_#141414] hover:shadow-[3px_3px_0px_#141414] transition-all cursor-pointer flex items-center justify-between gap-3 group min-w-0 ${
                           isFocused ? 'ring-3 ring-[#141414] ring-offset-2 scale-[1.01]' : ''
                         }`}
                       >
-                        <div className="flex items-center gap-3.5">
-                          <div className="w-12 h-12 rounded-xl bg-amber-50/70 border-2 border-[#141414] shadow-[1.5px_1.5px_0px_#141414] flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:rotate-1 transition-all">
+                        <div className="flex items-center gap-3 sm:gap-3.5 min-w-0 flex-1">
+                          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-amber-50/70 border-2 border-[#141414] shadow-[1.5px_1.5px_0px_#141414] flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:rotate-1 transition-all">
                             <FolderIllustration name={folder.name} />
                           </div>
-                          <div>
-                            <span className="font-bold text-sm block text-[#141414] group-hover:text-[#FF6D00] transition-colors">
+                          <div className="min-w-0 flex-1">
+                            <span className="font-bold text-xs sm:text-sm block truncate text-[#141414] group-hover:text-[#FF6D00] transition-colors">
                               {folder.name}
                             </span>
-                            <span className="text-[11px] text-neutral-500 font-mono">
+                            <span className="text-[11px] text-neutral-500 font-mono block truncate">
                               {folder.name.toLowerCase().includes('recommend')
                                 ? 'Developer Pick'
                                 : countFiles(folder) === 0
@@ -3432,7 +3433,7 @@ export default function App() {
                           </div>
                         </div>
 
-                        <span className="text-xs font-bold text-neutral-400 group-hover:text-[#141414] transition-colors">
+                        <span className="text-xs font-bold text-neutral-400 group-hover:text-[#141414] transition-colors shrink-0">
                           →
                         </span>
                       </div>
@@ -3462,16 +3463,16 @@ export default function App() {
                         key={idx}
                         data-keyboard-focused={isFocused ? 'true' : undefined}
                         onClick={() => handleOpenPreview(file, visibleFiles)}
-                        className={`bg-white border-2 border-[#141414] rounded-xl p-3.5 px-4 shadow-[2px_2px_0px_#141414] hover:shadow-[3.5px_3.5px_0px_#141414] hover:-translate-y-0.5 transition-all flex items-center justify-between gap-4 group cursor-pointer ${
+                        className={`bg-white border-2 border-[#141414] rounded-xl p-3 sm:p-3.5 px-3.5 sm:px-4 shadow-[2px_2px_0px_#141414] hover:shadow-[3.5px_3.5px_0px_#141414] hover:-translate-y-0.5 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group cursor-pointer ${
                           isFocused ? 'ring-3 ring-[#141414] ring-offset-2 scale-[1.01]' : ''
                         }`}
                       >
-                        <div className="flex items-center gap-3.5 min-w-0">
-                          <div className="w-11 h-11 rounded-xl bg-amber-50/60 border-2 border-[#141414] shadow-[1.5px_1.5px_0px_#141414] flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:-rotate-3 group-hover:bg-amber-100/90 group-hover:shadow-[2.5px_2.5px_0px_#141414] transition-all duration-200">
+                        <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto flex-1">
+                          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-amber-50/60 border-2 border-[#141414] shadow-[1.5px_1.5px_0px_#141414] flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:-rotate-3 group-hover:bg-amber-100/90 group-hover:shadow-[2.5px_2.5px_0px_#141414] transition-all duration-200">
                             <FileIllustration type={file.type} />
                           </div>
-                          <div className="truncate">
-                            <span className="font-bold text-xs md:text-sm block truncate text-[#141414] group-hover:text-[#FF6D00] transition-colors">
+                          <div className="min-w-0 flex-1">
+                            <span className="font-bold text-xs sm:text-sm block truncate text-[#141414] group-hover:text-[#FF6D00] transition-colors" title={file.name}>
                               {file.name}
                             </span>
                             <div className="flex items-center gap-2 mt-0.5">
@@ -3485,13 +3486,13 @@ export default function App() {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-2 shrink-0 pt-2 sm:pt-0 border-t border-neutral-100 sm:border-0 justify-end w-full sm:w-auto">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handleOpenPreview(file, visibleFiles);
                             }}
-                            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-white border-2 border-[#141414] text-[#141414] hover:bg-neutral-100 transition-all shrink-0 shadow-[1px_1px_0px_#141414] active:scale-95"
+                            className="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold bg-white border-2 border-[#141414] text-[#141414] hover:bg-neutral-100 transition-all shadow-[1px_1px_0px_#141414] active:scale-95 text-center min-h-[36px] flex items-center justify-center cursor-pointer"
                             title="Open preview in browser"
                           >
                             Preview
@@ -3501,7 +3502,7 @@ export default function App() {
                               e.stopPropagation();
                               handleDownload(file);
                             }}
-                            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#141414] text-white hover:bg-neutral-800 transition-all shrink-0 shadow-[1px_1px_0px_rgba(0,0,0,0.3)] active:scale-95"
+                            className="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold bg-[#141414] text-white hover:bg-neutral-800 transition-all shadow-[1px_1px_0px_rgba(0,0,0,0.3)] active:scale-95 text-center min-h-[36px] flex items-center justify-center cursor-pointer"
                           >
                             Download
                           </button>
@@ -3528,7 +3529,7 @@ export default function App() {
       </main>
 
       {/* 3. PERSONAL MINIMAL FOOTER */}
-      <footer className="border-t-2 border-[#141414] bg-white mt-auto py-5 px-6">
+      <footer className="border-t-2 border-[#141414] bg-white mt-auto py-4 sm:py-5 px-4 sm:px-6">
         <div className="max-w-5xl mx-auto flex items-center justify-center text-center">
           <div className="group inline-flex items-center gap-2 select-none cursor-default">
             <span
