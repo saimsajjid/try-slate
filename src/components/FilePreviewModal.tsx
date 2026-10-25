@@ -27,6 +27,7 @@ interface FilePreviewModalProps {
   file: PreviewFile | null;
   folderFiles?: PreviewFile[];
   onNavigate?: (file: PreviewFile) => void;
+  onNavigateFile?: (direction: 'next' | 'prev') => void;
   onNavigateFolder?: (direction: 'next' | 'prev') => void;
   onNavigateCourse?: (direction: 'next' | 'prev') => void;
   onClose: () => void;
@@ -41,6 +42,7 @@ export function FilePreviewModal({
   file,
   folderFiles,
   onNavigate,
+  onNavigateFile,
   onNavigateFolder,
   onNavigateCourse,
   onClose,
@@ -521,20 +523,24 @@ export function FilePreviewModal({
       } else if (e.data.action === 'downloadFile' && file) {
         onDownload(file);
       } else if (e.data.action === 'slateShortcutNav') {
-        const { direction, ctrlKey, altKey, shiftKey } = e.data;
-        const delta = direction === 'next' ? 1 : -1;
-        if (shiftKey) {
-          onNavigateCourse?.(direction);
-        } else if (altKey) {
+        const { direction, level, ctrlKey, altKey, shiftKey } = e.data;
+        const targetLevel = level || (ctrlKey ? 'file' : (altKey ? 'folder' : (shiftKey ? 'course' : null)));
+        if (targetLevel === 'file') {
+          if (onNavigateFile) {
+            onNavigateFile(direction);
+          } else {
+            handleFolderFileNav(direction === 'next' ? 1 : -1);
+          }
+        } else if (targetLevel === 'folder') {
           onNavigateFolder?.(direction);
-        } else if (ctrlKey) {
-          handleFolderFileNav(delta);
+        } else if (targetLevel === 'course') {
+          onNavigateCourse?.(direction);
         }
       }
     };
     window.addEventListener('message', handleIframeMessage);
     return () => window.removeEventListener('message', handleIframeMessage);
-  }, [file, onClose, onDownload, onNavigateCourse, onNavigateFolder, folderFiles, currentFolderIndex, onNavigate]);
+  }, [file, onClose, onDownload, onNavigateFile, onNavigateCourse, onNavigateFolder, folderFiles, currentFolderIndex, onNavigate]);
 
   // Keyboard controls for modal (Esc or Backspace to close, Arrow keys for gallery, +/- for zoom)
   useEffect(() => {
@@ -547,15 +553,22 @@ export function FilePreviewModal({
         return;
       }
 
-      // 1. Slate 3-tier hierarchy shortcuts: Ctrl/Alt/Shift + ArrowLeft/ArrowRight
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-        const direction = e.key === 'ArrowRight' ? 'next' : 'prev';
-        const delta = direction === 'next' ? 1 : -1;
+      // 1. Slate 3-tier hierarchy shortcuts: Ctrl (File), Alt (Week/Folder), Shift (Subject)
+      // Supports ArrowLeft/ArrowRight, as well as , / < and . / >
+      const isNextNav = e.key === 'ArrowRight' || e.key === '.' || e.key === '>';
+      const isPrevNav = e.key === 'ArrowLeft' || e.key === ',' || e.key === '<';
 
-        if (e.shiftKey) {
+      if (isNextNav || isPrevNav) {
+        const direction = isNextNav ? 'next' : 'prev';
+
+        if (e.ctrlKey || e.metaKey) {
           e.preventDefault();
           e.stopPropagation();
-          onNavigateCourse?.(direction);
+          if (onNavigateFile) {
+            onNavigateFile(direction);
+          } else {
+            handleFolderFileNav(direction === 'next' ? 1 : -1);
+          }
           return;
         }
         if (e.altKey) {
@@ -564,10 +577,10 @@ export function FilePreviewModal({
           onNavigateFolder?.(direction);
           return;
         }
-        if (e.ctrlKey || e.metaKey) {
+        if (e.shiftKey) {
           e.preventDefault();
           e.stopPropagation();
-          handleFolderFileNav(delta);
+          onNavigateCourse?.(direction);
           return;
         }
       }
@@ -632,6 +645,7 @@ export function FilePreviewModal({
     folderFiles,
     onNavigate,
     onClose,
+    onNavigateFile,
     onNavigateCourse,
     onNavigateFolder,
   ]);

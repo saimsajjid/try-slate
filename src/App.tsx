@@ -2734,6 +2734,57 @@ export default function App() {
     }
   };
 
+  // Navigate next/prev file (File level: Ctrl + Arrow or Ctrl + >)
+  const handleNavigateFile = (direction: 'next' | 'prev') => {
+    const delta = direction === 'next' ? 1 : -1;
+
+    // Case 1: When preview modal is open
+    if (previewFile) {
+      const filesList =
+        previewFilesList.length > 0
+          ? previewFilesList
+          : visibleFiles.length > 0
+          ? visibleFiles
+          : [];
+
+      if (filesList.length > 1) {
+        const currentIdx = filesList.findIndex(
+          (f) =>
+            f.url === previewFile.url ||
+            f.name.toLowerCase() === previewFile.name.toLowerCase()
+        );
+
+        if (currentIdx !== -1) {
+          const nextIdx = currentIdx + delta;
+          if (nextIdx >= 0 && nextIdx < filesList.length) {
+            const nextFile = filesList[nextIdx];
+            setPreviewFile(nextFile);
+            triggerToast(`${nextFile.name} (${nextIdx + 1}/${filesList.length})`);
+            return;
+          }
+        }
+      }
+
+      // If at boundary of folder (or folder only has 1 file): step to next/prev folder's file
+      handleNavigateFolder(direction);
+      return;
+    }
+
+    // Case 2: When preview modal is closed (browsing on dashboard/folder page)
+    if (visibleFiles.length > 0) {
+      let currentIdx = keyboardIndex - visibleFolders.length;
+      if (currentIdx < 0 || currentIdx >= visibleFiles.length) {
+        currentIdx = delta === 1 ? -1 : visibleFiles.length;
+      }
+      const nextIdx = (currentIdx + delta + visibleFiles.length) % visibleFiles.length;
+      setKeyboardIndex(visibleFolders.length + nextIdx);
+      handleOpenPreview(visibleFiles[nextIdx], visibleFiles);
+      triggerToast(visibleFiles[nextIdx].name);
+    } else if (activeCourse) {
+      handleNavigateFolder(direction);
+    }
+  };
+
   // Current view content when drilled down
   const currentFolder =
     activeFolderTrail.length > 0
@@ -2799,17 +2850,27 @@ export default function App() {
 
       if (isInput) return;
 
-      // Hierarchy shortcuts on main dashboard/folder view: Shift+Arrow (Subject), Alt+Arrow (Week/Folder)
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-        const direction = e.key === 'ArrowRight' ? 'next' : 'prev';
-        if (e.shiftKey) {
+      // Hierarchy shortcuts on main dashboard/folder view:
+      // Ctrl (File), Alt (Week/Folder), Shift (Subject)
+      // Supports ArrowLeft/ArrowRight, as well as , / < and . / >
+      const isNextNav = e.key === 'ArrowRight' || e.key === '.' || e.key === '>';
+      const isPrevNav = e.key === 'ArrowLeft' || e.key === ',' || e.key === '<';
+
+      if (isNextNav || isPrevNav) {
+        const direction = isNextNav ? 'next' : 'prev';
+        if (e.ctrlKey || e.metaKey) {
           e.preventDefault();
-          handleNavigateCourse(direction);
+          handleNavigateFile(direction);
           return;
         }
         if (e.altKey) {
           e.preventDefault();
           handleNavigateFolder(direction);
+          return;
+        }
+        if (e.shiftKey) {
+          e.preventDefault();
+          handleNavigateCourse(direction);
           return;
         }
       }
@@ -3758,6 +3819,7 @@ export default function App() {
           setPreviewFile(nextFile);
           triggerToast(nextFile.name);
         }}
+        onNavigateFile={handleNavigateFile}
         onNavigateFolder={handleNavigateFolder}
         onNavigateCourse={handleNavigateCourse}
         onClose={() => {

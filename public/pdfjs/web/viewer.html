@@ -913,18 +913,41 @@ See https://github.com/adobe-type-tools/cmap-resources
             e.preventDefault();
             e.stopPropagation();
           }
-          // Slate 3-tier hierarchy shortcuts: Ctrl/Alt/Shift + ArrowLeft/ArrowRight
-          if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-            if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) {
+          // Slate 3-tier hierarchy shortcuts: Ctrl (File), Alt (Week/Folder), Shift (Subject)
+          // Supports ArrowLeft/ArrowRight, as well as , / < and . / >
+          const isNextNav = e.key === 'ArrowRight' || e.key === '.' || e.key === '>';
+          const isPrevNav = e.key === 'ArrowLeft' || e.key === ',' || e.key === '<';
+
+          if (isNextNav || isPrevNav) {
+            const dir = isNextNav ? 'next' : 'prev';
+            // If Ctrl is held, it is ALWAYS file navigation (even if Shift was held to type '>')
+            if (e.ctrlKey || e.metaKey) {
               e.preventDefault();
               e.stopPropagation();
               window.parent.postMessage({
                 action: 'slateShortcutNav',
-                key: e.key,
-                direction: e.key === 'ArrowRight' ? 'next' : 'prev',
-                ctrlKey: Boolean(e.ctrlKey || e.metaKey),
-                altKey: Boolean(e.altKey),
-                shiftKey: Boolean(e.shiftKey)
+                level: 'file',
+                direction: dir
+              }, '*');
+              return;
+            }
+            if (e.altKey) {
+              e.preventDefault();
+              e.stopPropagation();
+              window.parent.postMessage({
+                action: 'slateShortcutNav',
+                level: 'folder',
+                direction: dir
+              }, '*');
+              return;
+            }
+            if (e.shiftKey) {
+              e.preventDefault();
+              e.stopPropagation();
+              window.parent.postMessage({
+                action: 'slateShortcutNav',
+                level: 'course',
+                direction: dir
               }, '*');
               return;
             }
