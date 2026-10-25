@@ -588,6 +588,17 @@
       "doodle": "feather",
       "folders": [
         {
+          "name": "Course Card",
+          "files": [
+            {
+              "name": "ELCS_Course_Card_Fall_2026.pdf",
+              "size": "772.2 KB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/SS-103_English_Language_and_Communication_Skills/Course_Card/ELCS_Course_Card_Fall_2026.pdf"
+            }
+          ]
+        },
+        {
           "name": "Week 01",
           "files": []
         },
