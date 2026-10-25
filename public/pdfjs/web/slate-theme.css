@@ -871,10 +871,6 @@ textarea,
     max-width: 70px !important;
   }
 
-  #sidebarToggleButton {
-    display: none !important;
-  }
-
   #customScaleDropdown {
     display: none !important;
   }
@@ -889,5 +885,91 @@ textarea,
   #numPages {
     font-size: 11px !important;
     padding-left: 2px !important;
+  }
+}
+
+/* ------------------------------------------------------------- */
+/* Sidebar Panel Header & Mobile Drawer Overrides                */
+/* ------------------------------------------------------------- */
+#toolbarSidebar {
+  display: flex !important;
+  height: 40px !important;
+  background-color: #141417 !important;
+  border-bottom: 1px solid #222226 !important;
+  padding: 0 8px 0 12px !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  box-sizing: border-box !important;
+}
+
+.sidebarHeaderBar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+}
+
+.sidebarTitleContainer {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  color: #A1A1AA !important;
+}
+
+.sidebarTitleIcon {
+  color: #F59E0B !important;
+  shrink: 0 !important;
+}
+
+.sidebarTitleText {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #D4D4D8 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  font-family: 'JetBrains Mono', monospace !important;
+}
+
+.sidebarCloseBtn {
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 6px !important;
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  color: #D4D4D8 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  transition: all 0.15s ease !important;
+}
+
+.sidebarCloseBtn:hover, .sidebarCloseBtn:active {
+  background-color: rgba(255, 255, 255, 0.18) !important;
+  color: #FFFFFF !important;
+}
+
+#sidebarContent {
+  inset-block-start: 40px !important;
+  height: calc(100% - 40px) !important;
+}
+
+/* Mobile drawer overlay behavior under 640px */
+@media (max-width: 640px) {
+  #outerContainer.sidebarOpen #sidebarContainer {
+    width: 220px !important;
+    max-width: 80vw !important;
+    z-index: 99 !important;
+    box-shadow: 6px 0 24px rgba(0, 0, 0, 0.8) !important;
+  }
+
+  #outerContainer.sidebarOpen #viewerContainer:not(.pdfPresentationMode) {
+    inset-inline-start: 0 !important; /* Keep document full width under overlay */
+  }
+
+  #sidebarToggleButton {
+    display: inline-flex !important;
+    width: 28px !important;
+    height: 28px !important;
   }
 }

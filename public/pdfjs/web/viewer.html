@@ -41,32 +41,30 @@ See https://github.com/adobe-type-tools/cmap-resources
     <div id="outerContainer">
 
       <div id="sidebarContainer">
-        <div id="toolbarSidebar" class="toolbarHorizontalGroup" style="display: none !important;">
-          <div id="toolbarSidebarLeft">
-            <div id="sidebarViewButtons" class="toolbarHorizontalGroup toggled" role="radiogroup">
-              <button id="viewThumbnail" class="toolbarButton toggled" style="display: none !important;" type="button" title="Show Thumbnails" tabindex="0" data-l10n-id="pdfjs-thumbs-button" role="radio" aria-checked="true" aria-controls="thumbnailView">
-                 <span data-l10n-id="pdfjs-thumbs-button-label">Thumbnails</span>
-              </button>
-              <button id="viewOutline" class="toolbarButton" type="button" title="Show Document Outline (double-click to expand/collapse all items)" tabindex="0" data-l10n-id="pdfjs-document-outline-button" role="radio" aria-checked="false" aria-controls="outlineView" style="display: none !important;">
-                 <span data-l10n-id="pdfjs-document-outline-button-label">Document Outline</span>
-              </button>
-              <button id="viewAttachments" class="toolbarButton" type="button" title="Show Attachments" tabindex="0" data-l10n-id="pdfjs-attachments-button" role="radio" aria-checked="false" aria-controls="attachmentsView" style="display: none !important;">
-                 <span data-l10n-id="pdfjs-attachments-button-label">Attachments</span>
-              </button>
-              <button id="viewLayers" class="toolbarButton" type="button" title="Show Layers (double-click to reset all layers to the default state)" tabindex="0" data-l10n-id="pdfjs-layers-button" role="radio" aria-checked="false" aria-controls="layersView" style="display: none !important;">
-                 <span data-l10n-id="pdfjs-layers-button-label">Layers</span>
-              </button>
+        <div id="toolbarSidebar" class="toolbarHorizontalGroup">
+          <div class="sidebarHeaderBar">
+            <div class="sidebarTitleContainer">
+              <svg class="sidebarTitleIcon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="9" y1="3" x2="9" y2="21"></line>
+              </svg>
+              <span class="sidebarTitleText">Thumbnails</span>
             </div>
+            <button id="sidebarCloseButton" class="toolbarButton sidebarCloseBtn" type="button" title="Close Panel">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
           </div>
-
-          <div id="toolbarSidebarRight" style="display: none !important;">
-            <div id="outlineOptionsContainer" class="toolbarHorizontalGroup">
-              <div class="verticalToolbarSeparator"></div>
-
-              <button id="currentOutlineItem" class="toolbarButton" type="button" disabled="disabled" title="Find Current Outline Item" tabindex="0" data-l10n-id="pdfjs-current-outline-item-button">
-                <span data-l10n-id="pdfjs-current-outline-item-button-label">Current Outline Item</span>
-              </button>
-            </div>
+          <div id="sidebarViewButtons" style="display: none !important;" role="radiogroup">
+            <button id="viewThumbnail" class="toolbarButton toggled" type="button" data-l10n-id="pdfjs-thumbs-button" role="radio" aria-checked="true" aria-controls="thumbnailView"></button>
+            <button id="viewOutline" class="toolbarButton" type="button" data-l10n-id="pdfjs-document-outline-button" role="radio" aria-checked="false" aria-controls="outlineView"></button>
+            <button id="viewAttachments" class="toolbarButton" type="button" data-l10n-id="pdfjs-attachments-button" role="radio" aria-checked="false" aria-controls="attachmentsView"></button>
+            <button id="viewLayers" class="toolbarButton" type="button" data-l10n-id="pdfjs-layers-button" role="radio" aria-checked="false" aria-controls="layersView"></button>
+          </div>
+          <div id="outlineOptionsContainer" style="display: none !important;">
+            <button id="currentOutlineItem" class="toolbarButton" type="button" disabled="disabled"></button>
           </div>
         </div>
         <div id="sidebarContent">
@@ -916,6 +914,52 @@ See https://github.com/adobe-type-tools/cmap-resources
             e.stopPropagation();
           }
         }, true);
+
+        
+        // Sidebar Close & Mobile Overlay Auto-Dismiss handlers
+        function closePdfSidebar() {
+          if (window.PDFViewerApplication && window.PDFViewerApplication.pdfSidebar) {
+            window.PDFViewerApplication.pdfSidebar.close();
+          } else {
+            const toggleBtn = document.getElementById('sidebarToggleButton');
+            const outer = document.getElementById('outerContainer');
+            if (toggleBtn && outer && outer.classList.contains('sidebarOpen')) {
+              toggleBtn.click();
+            }
+          }
+        }
+
+        const sidebarCloseBtn = document.getElementById('sidebarCloseButton');
+        if (sidebarCloseBtn) {
+          sidebarCloseBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            closePdfSidebar();
+          });
+        }
+
+        // Tap outside sidebar on mobile closes it
+        const viewerContainer = document.getElementById('viewerContainer');
+        if (viewerContainer) {
+          viewerContainer.addEventListener('click', function() {
+            if (window.innerWidth < 640) {
+              const outer = document.getElementById('outerContainer');
+              if (outer && outer.classList.contains('sidebarOpen')) {
+                closePdfSidebar();
+              }
+            }
+          });
+        }
+
+        // Tap thumbnail on mobile selects page and auto-closes sidebar
+        const thumbnailView = document.getElementById('thumbnailView');
+        if (thumbnailView) {
+          thumbnailView.addEventListener('click', function(e) {
+            if (window.innerWidth < 640 && e.target.closest('.thumbnail, a, img')) {
+              setTimeout(closePdfSidebar, 150);
+            }
+          });
+        }
 
         const dlBtn = document.getElementById('downloadButton');
         if (dlBtn) {
