@@ -582,10 +582,35 @@ export function FilePreviewModal({
         return;
       }
 
+      // Do NOT hijack keys when user is typing in an input field
+      const target = e.target as HTMLElement | null;
+      const isInput =
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable ||
+          Boolean(
+            target.closest &&
+              (target.closest('input') ||
+                target.closest('textarea') ||
+                target.closest('[contenteditable="true"]'))
+          ));
+
+      if (isInput) return;
+
       // 1. Slate 3-tier hierarchy shortcuts: Ctrl (File), Alt (Week/Folder), Shift (Subject)
-      // Supports ArrowLeft/ArrowRight, as well as , / < and . / >
-      const isNextNav = e.key === 'ArrowRight' || e.key === '.' || e.key === '>';
-      const isPrevNav = e.key === 'ArrowLeft' || e.key === ',' || e.key === '<';
+      // Supports ArrowLeft/ArrowRight, ArrowUp/ArrowDown, as well as , / < and . / >
+      const isNextNav =
+        e.key === 'ArrowRight' ||
+        e.key === 'ArrowDown' ||
+        e.key === '.' ||
+        e.key === '>';
+      const isPrevNav =
+        e.key === 'ArrowLeft' ||
+        e.key === 'ArrowUp' ||
+        e.key === ',' ||
+        e.key === '<';
 
       if (isNextNav || isPrevNav) {
         const direction = isNextNav ? 'next' : 'prev';
@@ -738,12 +763,12 @@ export function FilePreviewModal({
 
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               {/* Quick Hierarchy Shortcuts Indicator */}
-              <div className="hidden xl:flex items-center gap-2 text-[11px] font-mono text-zinc-400 bg-white/[0.04] px-2.5 py-1 rounded-md border border-white/5 select-none shrink-0">
-                <span title="Ctrl + Left/Right Arrow to cycle files in this folder"><kbd className="bg-white/10 px-1 py-0.5 rounded text-zinc-200">Ctrl ↔</kbd> File</span>
+              <div className="hidden lg:flex items-center gap-2 text-[11px] font-mono text-zinc-400 bg-white/[0.04] px-2.5 py-1 rounded-md border border-white/5 select-none shrink-0">
+                <span title="Ctrl + Arrow (↔/↕) to cycle files"><kbd className="bg-white/10 px-1 py-0.5 rounded text-zinc-200">Ctrl ↔↕</kbd> File</span>
                 <span className="text-zinc-600">•</span>
-                <span title="Alt + Left/Right Arrow to switch week/folder"><kbd className="bg-white/10 px-1 py-0.5 rounded text-zinc-200">Alt ↔</kbd> Week</span>
+                <span title="Alt + Arrow (↔/↕) to switch week/folder"><kbd className="bg-white/10 px-1 py-0.5 rounded text-zinc-200">Alt ↔↕</kbd> Week</span>
                 <span className="text-zinc-600">•</span>
-                <span title="Shift + Left/Right Arrow to switch course/subject"><kbd className="bg-white/10 px-1 py-0.5 rounded text-zinc-200">Shift ↔</kbd> Subject</span>
+                <span title="Shift + Arrow (↔/↕) to switch course/subject"><kbd className="bg-white/10 px-1 py-0.5 rounded text-zinc-200">Shift ↔↕</kbd> Subject</span>
               </div>
 
               <button

@@ -2672,14 +2672,15 @@ export default function App() {
   const handleNavigateFile = (direction: 'next' | 'prev') => {
     if (!activeCourse) {
       if (data.courses && data.courses.length > 0) {
-        const firstCourse = data.courses[0];
-        setActiveCourse(firstCourse);
-        const files = collectCourseFiles(firstCourse);
+        const targetCourse = direction === 'next' ? data.courses[0] : data.courses[data.courses.length - 1];
+        setActiveCourse(targetCourse);
+        const files = collectCourseFiles(targetCourse);
         if (files.length > 0) {
-          setActiveFolderTrail(files[0].trail);
-          setPreviewFilesList(files[0].folder.files ? getCleanFiles(files[0].folder.files) : [files[0].file]);
-          setPreviewFile(files[0].file);
-          triggerToast(`${files[0].displayName} • ${files[0].file.name}`);
+          const entry = direction === 'next' ? files[0] : files[files.length - 1];
+          setActiveFolderTrail(entry.trail);
+          setPreviewFilesList(entry.folder.files ? getCleanFiles(entry.folder.files) : [entry.file]);
+          setPreviewFile(entry.file);
+          triggerToast(`${entry.displayName} • ${entry.file.name}`);
         }
       }
       return;
@@ -2689,7 +2690,7 @@ export default function App() {
     const allCourseFiles = collectCourseFiles(activeCourse);
 
     if (allCourseFiles.length === 0) {
-      handleNavigateCourse(direction);
+      handleNavigateCourse(direction, 'file');
       return;
     }
 
@@ -2700,6 +2701,27 @@ export default function App() {
           entry.file.url === previewFile.url ||
           entry.file.name.toLowerCase() === previewFile.name.toLowerCase()
       );
+    } else {
+      // Preview modal is closed: determine start index from current folder or focused file
+      if (activeFolderTrail.length > 0) {
+        const curFolder = activeFolderTrail[activeFolderTrail.length - 1];
+        if (keyboardIndex >= visibleFolders.length && keyboardIndex < visibleFolders.length + visibleFiles.length) {
+          const focusedFile = visibleFiles[keyboardIndex - visibleFolders.length];
+          currentIdx = allCourseFiles.findIndex(
+            (entry) => entry.file.url === focusedFile.url || entry.file.name.toLowerCase() === focusedFile.name.toLowerCase()
+          );
+        } else {
+          const folderIndices = allCourseFiles
+            .map((entry, idx) => ({ entry, idx }))
+            .filter(({ entry }) =>
+              entry.folder.name.toLowerCase() === curFolder.name.toLowerCase() ||
+              entry.trail.some((t) => t.name.toLowerCase() === curFolder.name.toLowerCase())
+            );
+          if (folderIndices.length > 0) {
+            currentIdx = direction === 'next' ? folderIndices[0].idx - 1 : folderIndices[folderIndices.length - 1].idx + 1;
+          }
+        }
+      }
     }
 
     let nextIdx = 0;
@@ -2708,8 +2730,8 @@ export default function App() {
       if (targetIdx >= 0 && targetIdx < allCourseFiles.length) {
         nextIdx = targetIdx;
       } else {
-        // Traversed past this course boundary: step to next/prev course!
-        handleNavigateCourse(direction);
+        // Traversed past this course boundary: step to next/prev course, landing on opposite file!
+        handleNavigateCourse(direction, 'file');
         return;
       }
     } else {
@@ -2766,7 +2788,7 @@ export default function App() {
       if (targetSec >= 0 && targetSec < sections.length) {
         nextSecIdx = targetSec;
       } else {
-        handleNavigateCourse(direction);
+        handleNavigateCourse(direction, 'folder');
         return;
       }
     } else {
@@ -2786,7 +2808,10 @@ export default function App() {
   };
 
   // 3. Subject Level (Shift + Arrow or Shift + >): Switches course and opens matching or first section
-  const handleNavigateCourse = (direction: 'next' | 'prev') => {
+  const handleNavigateCourse = (
+    direction: 'next' | 'prev',
+    fromLevel: 'file' | 'folder' | 'course' = 'course'
+  ) => {
     const courses = data.courses || [];
     if (courses.length === 0) return;
     const delta = direction === 'next' ? 1 : -1;
@@ -2809,8 +2834,9 @@ export default function App() {
     setActiveCourse(targetCourse);
 
     const sections = collectCourseSections(targetCourse);
+    const allFiles = collectCourseFiles(targetCourse);
 
-    if (sections.length === 0) {
+    if (sections.length === 0 || allFiles.length === 0) {
       setActiveFolderTrail([]);
       setPreviewFile(null);
       setPreviewFilesList([]);
@@ -2818,27 +2844,72 @@ export default function App() {
       return;
     }
 
-    // Match current week or section name if possible (e.g. Week 02)
-    let matchedSection = sections[0];
-    if (activeFolderTrail.length > 0) {
-      const currentFolderName = activeFolderTrail[activeFolderTrail.length - 1].name.toLowerCase();
-      const found = sections.find((sec) =>
-        sec.trail.some((tf) => tf.name.toLowerCase() === currentFolderName)
+    if (fromLevel === 'file') {
+      // Crossing course boundary from file navigation:
+      // forward lands on FIRST file; backward lands on LAST file
+      const targetEntry = direction === 'next' ? allFiles[0] : allFiles[allFiles.length - 1];
+      setActiveFolderTrail(targetEntry.trail);
+      const targetFolderFiles = targetEntry.folder.files
+        ? getCleanFiles(targetEntry.folder.files)
+        : [targetEntry.file];
+      setPreviewFilesList(targetFolderFiles);
+      setPreviewFile(targetEntry.file);
+      triggerToast(
+        targetEntry.totalFilesInFolder > 1
+          ? `${targetCourse.code} • ${targetEntry.displayName} • ${targetEntry.file.name} (${targetEntry.fileIndex + 1}/${targetEntry.totalFilesInFolder})`
+          : `${targetCourse.code} • ${targetEntry.displayName} • ${targetEntry.file.name}`
       );
-      if (found) {
-        matchedSection = found;
-      }
+      return;
     }
 
-    setActiveFolderTrail(matchedSection.trail);
+    if (fromLevel === 'folder') {
+      // Crossing course boundary from folder navigation:
+      // forward lands on FIRST folder; backward lands on LAST folder
+      const targetSection = direction === 'next' ? sections[0] : sections[sections.length - 1];
+      setActiveFolderTrail(targetSection.trail);
+      if (previewFile) {
+        setPreviewFilesList(targetSection.files);
+        setPreviewFile(targetSection.files[0]);
+        triggerToast(`${targetCourse.code} • ${targetSection.displayName} • ${targetSection.files[0].name}`);
+      } else {
+        triggerToast(`${targetCourse.code} • ${targetSection.displayName}`);
+      }
+      return;
+    }
 
+    // fromLevel === 'course' (Shift + Arrow):
     if (previewFile) {
+      // Match current week or section name if possible (e.g. Week 02)
+      let matchedSection = sections[0];
+      if (activeFolderTrail.length > 0) {
+        const currentFolderName = activeFolderTrail[activeFolderTrail.length - 1].name.toLowerCase();
+        const found = sections.find((sec) =>
+          sec.trail.some((tf) => tf.name.toLowerCase() === currentFolderName)
+        );
+        if (found) {
+          matchedSection = found;
+        }
+      }
+      setActiveFolderTrail(matchedSection.trail);
       setPreviewFilesList(matchedSection.files);
       setPreviewFile(matchedSection.files[0]);
       triggerToast(
         `${targetCourse.code} • ${matchedSection.displayName} • ${matchedSection.files[0].name}`
       );
     } else {
+      // Preview modal is closed: keep user at course root (or matching folder if they were already inside one)
+      if (activeFolderTrail.length > 0) {
+        const currentFolderName = activeFolderTrail[activeFolderTrail.length - 1].name.toLowerCase();
+        const found = sections.find((sec) =>
+          sec.trail.some((tf) => tf.name.toLowerCase() === currentFolderName)
+        );
+        if (found) {
+          setActiveFolderTrail(found.trail);
+          triggerToast(`${targetCourse.code} • ${found.displayName}`);
+          return;
+        }
+      }
+      setActiveFolderTrail([]);
       triggerToast(`${targetCourse.code}: ${targetCourse.title}`);
     }
   };
@@ -2903,32 +2974,49 @@ export default function App() {
         target &&
         (target.tagName === 'INPUT' ||
           target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
           target.isContentEditable ||
-          target.closest('[contenteditable="true"]'));
+          Boolean(
+            target.closest &&
+              (target.closest('input') ||
+                target.closest('textarea') ||
+                target.closest('[contenteditable="true"]'))
+          ));
 
       if (isInput) return;
 
       // Hierarchy shortcuts on main dashboard/folder view:
       // Ctrl (File), Alt (Week/Folder), Shift (Subject)
-      // Supports ArrowLeft/ArrowRight, as well as , / < and . / >
-      const isNextNav = e.key === 'ArrowRight' || e.key === '.' || e.key === '>';
-      const isPrevNav = e.key === 'ArrowLeft' || e.key === ',' || e.key === '<';
+      // Supports ArrowLeft/ArrowRight, ArrowUp/ArrowDown, as well as , / < and . / >
+      const isNextNav =
+        e.key === 'ArrowRight' ||
+        e.key === 'ArrowDown' ||
+        e.key === '.' ||
+        e.key === '>';
+      const isPrevNav =
+        e.key === 'ArrowLeft' ||
+        e.key === 'ArrowUp' ||
+        e.key === ',' ||
+        e.key === '<';
 
       if (isNextNav || isPrevNav) {
         const direction = isNextNav ? 'next' : 'prev';
         if (e.ctrlKey || e.metaKey) {
           e.preventDefault();
+          e.stopPropagation();
           handleNavigateFile(direction);
           return;
         }
         if (e.altKey) {
           e.preventDefault();
+          e.stopPropagation();
           handleNavigateFolder(direction);
           return;
         }
         if (e.shiftKey) {
           e.preventDefault();
-          handleNavigateCourse(direction);
+          e.stopPropagation();
+          handleNavigateCourse(direction, 'course');
           return;
         }
       }

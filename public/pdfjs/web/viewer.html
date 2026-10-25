@@ -931,11 +931,24 @@ See https://github.com/adobe-type-tools/cmap-resources
           if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
             e.preventDefault();
             e.stopPropagation();
+            return;
           }
+
+          // Do NOT hijack keys when user is typing in an input field (e.g. page number, search input)
+          const target = e.target;
+          const isInput = target && (
+            target.tagName === 'INPUT' ||
+            target.tagName === 'TEXTAREA' ||
+            target.tagName === 'SELECT' ||
+            target.isContentEditable ||
+            (target.closest && (target.closest('input') || target.closest('textarea') || target.closest('[contenteditable="true"]')))
+          );
+          if (isInput) return;
+
           // Slate 3-tier hierarchy shortcuts: Ctrl (File), Alt (Week/Folder), Shift (Subject)
-          // Supports ArrowLeft/ArrowRight, as well as , / < and . / >
-          const isNextNav = e.key === 'ArrowRight' || e.key === '.' || e.key === '>';
-          const isPrevNav = e.key === 'ArrowLeft' || e.key === ',' || e.key === '<';
+          // Supports ArrowLeft/ArrowRight, ArrowUp/ArrowDown, as well as , / < and . / >
+          const isNextNav = e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === '.' || e.key === '>';
+          const isPrevNav = e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === ',' || e.key === '<';
 
           if (isNextNav || isPrevNav) {
             const dir = isNextNav ? 'next' : 'prev';
