@@ -2579,6 +2579,161 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const getCleanFiles = (files?: FileItem[]) => {
+    return (files || []).filter(
+      (f) =>
+        !f.name.toLowerCase().includes('tracker') &&
+        !f.name.toLowerCase().includes('student')
+    );
+  };
+
+  // Navigate next/prev folder (Week level: Alt + Arrow)
+  const handleNavigateFolder = (direction: 'next' | 'prev') => {
+    if (!activeCourse) return;
+    const delta = direction === 'next' ? 1 : -1;
+
+    const parentTrail =
+      activeFolderTrail.length > 1
+        ? activeFolderTrail.slice(0, activeFolderTrail.length - 1)
+        : [];
+    const parentFolder =
+      activeFolderTrail.length > 1
+        ? parentTrail[parentTrail.length - 1]
+        : null;
+
+    const folderList = (
+      parentFolder ? parentFolder.folders || [] : activeCourse.folders || []
+    ).filter((f) => countFiles(f) > 0 || (f.folders && f.folders.length > 0));
+
+    if (folderList.length === 0) return;
+
+    let currentIndex = -1;
+    if (activeFolderTrail.length > 0) {
+      const current = activeFolderTrail[activeFolderTrail.length - 1];
+      currentIndex = folderList.findIndex(
+        (f) => f.name.toLowerCase() === current.name.toLowerCase()
+      );
+    }
+
+    let nextIndex = 0;
+    if (currentIndex !== -1) {
+      nextIndex = (currentIndex + delta + folderList.length) % folderList.length;
+    } else {
+      nextIndex = delta === 1 ? 0 : folderList.length - 1;
+    }
+
+    const targetFolder = folderList[nextIndex];
+    const newTrail = [...parentTrail, targetFolder];
+    setActiveFolderTrail(newTrail);
+
+    if (previewFile) {
+      const cleanFiles = getCleanFiles(targetFolder.files);
+      if (cleanFiles.length > 0) {
+        setPreviewFilesList(cleanFiles);
+        setPreviewFile(cleanFiles[0]);
+        triggerToast(`${targetFolder.name} • ${cleanFiles[0].name}`);
+      } else {
+        const subWithFiles = (targetFolder.folders || []).find((sf) => countFiles(sf) > 0);
+        if (subWithFiles) {
+          const subFiles = getCleanFiles(subWithFiles.files);
+          if (subFiles.length > 0) {
+            setActiveFolderTrail([...newTrail, subWithFiles]);
+            setPreviewFilesList(subFiles);
+            setPreviewFile(subFiles[0]);
+            triggerToast(`${targetFolder.name} / ${subWithFiles.name} • ${subFiles[0].name}`);
+            return;
+          }
+        }
+        setPreviewFile(null);
+        setPreviewFilesList([]);
+        triggerToast(`${targetFolder.name}`);
+      }
+    } else {
+      triggerToast(`${targetFolder.name}`);
+    }
+  };
+
+  // Navigate next/prev course (Subject level: Shift + Arrow)
+  const handleNavigateCourse = (direction: 'next' | 'prev') => {
+    const courses = data.courses || [];
+    if (courses.length === 0) return;
+    const delta = direction === 'next' ? 1 : -1;
+
+    let currentIndex = -1;
+    if (activeCourse) {
+      currentIndex = courses.findIndex(
+        (c) => c.code.toLowerCase() === activeCourse.code.toLowerCase()
+      );
+    }
+
+    let nextIndex = 0;
+    if (currentIndex !== -1) {
+      nextIndex = (currentIndex + delta + courses.length) % courses.length;
+    } else {
+      nextIndex = delta === 1 ? 0 : courses.length - 1;
+    }
+
+    const targetCourse = courses[nextIndex];
+    setActiveCourse(targetCourse);
+
+    if (previewFile) {
+      let matchedFolder: FolderItem | null = null;
+      if (currentFolder) {
+        matchedFolder =
+          (targetCourse.folders || []).find(
+            (f) =>
+              f.name.toLowerCase() === currentFolder.name.toLowerCase() &&
+              (countFiles(f) > 0 || (f.files && f.files.length > 0))
+          ) || null;
+      }
+      if (!matchedFolder) {
+        matchedFolder =
+          (targetCourse.folders || []).find(
+            (f) => countFiles(f) > 0 || (f.files && f.files.length > 0)
+          ) || null;
+      }
+
+      if (matchedFolder) {
+        const cleanFiles = getCleanFiles(matchedFolder.files);
+        if (cleanFiles.length > 0) {
+          setActiveFolderTrail([matchedFolder]);
+          setPreviewFilesList(cleanFiles);
+          setPreviewFile(cleanFiles[0]);
+          triggerToast(`${targetCourse.code} • ${matchedFolder.name} • ${cleanFiles[0].name}`);
+          return;
+        }
+        const subWithFiles = (matchedFolder.folders || []).find((sf) => countFiles(sf) > 0);
+        if (subWithFiles) {
+          const subClean = getCleanFiles(subWithFiles.files);
+          if (subClean.length > 0) {
+            setActiveFolderTrail([matchedFolder, subWithFiles]);
+            setPreviewFilesList(subClean);
+            setPreviewFile(subClean[0]);
+            triggerToast(`${targetCourse.code} • ${subWithFiles.name} • ${subClean[0].name}`);
+            return;
+          }
+        }
+      }
+
+      const rootFiles = getCleanFiles(targetCourse.files);
+      if (rootFiles.length > 0) {
+        setActiveFolderTrail([]);
+        setPreviewFilesList(rootFiles);
+        setPreviewFile(rootFiles[0]);
+        triggerToast(`${targetCourse.code} • ${rootFiles[0].name}`);
+        return;
+      }
+
+      setActiveFolderTrail([]);
+      setPreviewFile(null);
+      setPreviewFilesList([]);
+      triggerToast(`${targetCourse.code}: ${targetCourse.title}`);
+    } else {
+      setActiveFolderTrail([]);
+      triggerToast(`${targetCourse.code}: ${targetCourse.title}`);
+    }
+  };
+
   // Current view content when drilled down
   const currentFolder =
     activeFolderTrail.length > 0
@@ -2643,6 +2798,21 @@ export default function App() {
           target.closest('[contenteditable="true"]'));
 
       if (isInput) return;
+
+      // Hierarchy shortcuts on main dashboard/folder view: Shift+Arrow (Subject), Alt+Arrow (Week/Folder)
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        const direction = e.key === 'ArrowRight' ? 'next' : 'prev';
+        if (e.shiftKey) {
+          e.preventDefault();
+          handleNavigateCourse(direction);
+          return;
+        }
+        if (e.altKey) {
+          e.preventDefault();
+          handleNavigateFolder(direction);
+          return;
+        }
+      }
 
       // 1. Backspace / Escape: Close preview, or step up folder, or return to courses
       if (e.key === 'Backspace' || e.key === 'Escape') {
@@ -3584,7 +3754,12 @@ export default function App() {
       <FilePreviewModal
         file={previewFile}
         folderFiles={previewFilesList}
-        onNavigate={(nextFile) => setPreviewFile(nextFile)}
+        onNavigate={(nextFile) => {
+          setPreviewFile(nextFile);
+          triggerToast(nextFile.name);
+        }}
+        onNavigateFolder={handleNavigateFolder}
+        onNavigateCourse={handleNavigateCourse}
         onClose={() => {
           setPreviewFile(null);
           setPreviewFilesList([]);

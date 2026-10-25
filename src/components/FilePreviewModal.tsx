@@ -27,6 +27,8 @@ interface FilePreviewModalProps {
   file: PreviewFile | null;
   folderFiles?: PreviewFile[];
   onNavigate?: (file: PreviewFile) => void;
+  onNavigateFolder?: (direction: 'next' | 'prev') => void;
+  onNavigateCourse?: (direction: 'next' | 'prev') => void;
   onClose: () => void;
   onDownload: (file: PreviewFile) => void;
 }
@@ -39,6 +41,8 @@ export function FilePreviewModal({
   file,
   folderFiles,
   onNavigate,
+  onNavigateFolder,
+  onNavigateCourse,
   onClose,
   onDownload,
 }: FilePreviewModalProps) {
@@ -150,6 +154,12 @@ export function FilePreviewModal({
     if (hasNextFolderFile && onNavigate && folderFiles) {
       onNavigate(folderFiles[currentFolderIndex + 1]);
     }
+  };
+
+  const handleFolderFileNav = (delta: number) => {
+    if (!folderFiles || folderFiles.length <= 1 || currentFolderIndex === -1 || !onNavigate) return;
+    const nextIndex = (currentFolderIndex + delta + folderFiles.length) % folderFiles.length;
+    onNavigate(folderFiles[nextIndex]);
   };
 
   useEffect(() => {
@@ -510,11 +520,21 @@ export function FilePreviewModal({
         onClose();
       } else if (e.data.action === 'downloadFile' && file) {
         onDownload(file);
+      } else if (e.data.action === 'slateShortcutNav') {
+        const { direction, ctrlKey, altKey, shiftKey } = e.data;
+        const delta = direction === 'next' ? 1 : -1;
+        if (shiftKey) {
+          onNavigateCourse?.(direction);
+        } else if (altKey) {
+          onNavigateFolder?.(direction);
+        } else if (ctrlKey) {
+          handleFolderFileNav(delta);
+        }
       }
     };
     window.addEventListener('message', handleIframeMessage);
     return () => window.removeEventListener('message', handleIframeMessage);
-  }, [file, onClose, onDownload]);
+  }, [file, onClose, onDownload, onNavigateCourse, onNavigateFolder, folderFiles, currentFolderIndex, onNavigate]);
 
   // Keyboard controls for modal (Esc or Backspace to close, Arrow keys for gallery, +/- for zoom)
   useEffect(() => {
@@ -527,7 +547,32 @@ export function FilePreviewModal({
         return;
       }
 
-      // For multi-page documents (PDF, DOCX, PPTX), do NOT hijack Arrow keys to change files!
+      // 1. Slate 3-tier hierarchy shortcuts: Ctrl/Alt/Shift + ArrowLeft/ArrowRight
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        const direction = e.key === 'ArrowRight' ? 'next' : 'prev';
+        const delta = direction === 'next' ? 1 : -1;
+
+        if (e.shiftKey) {
+          e.preventDefault();
+          e.stopPropagation();
+          onNavigateCourse?.(direction);
+          return;
+        }
+        if (e.altKey) {
+          e.preventDefault();
+          e.stopPropagation();
+          onNavigateFolder?.(direction);
+          return;
+        }
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          e.stopPropagation();
+          handleFolderFileNav(delta);
+          return;
+        }
+      }
+
+      // For multi-page documents (PDF, DOCX, PPTX), do NOT hijack plain Arrow keys to change files!
       if (ext === 'pdf' || ext === 'docx' || ext === 'pptx') {
         if (ext === 'pdf' && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', ' '].includes(e.key)) {
           try {
@@ -587,6 +632,8 @@ export function FilePreviewModal({
     folderFiles,
     onNavigate,
     onClose,
+    onNavigateCourse,
+    onNavigateFolder,
   ]);
 
   if (!file) return null;
@@ -647,6 +694,15 @@ export function FilePreviewModal({
             </div>
 
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              {/* Quick Hierarchy Shortcuts Indicator */}
+              <div className="hidden xl:flex items-center gap-2 text-[11px] font-mono text-zinc-400 bg-white/[0.04] px-2.5 py-1 rounded-md border border-white/5 select-none shrink-0">
+                <span title="Ctrl + Left/Right Arrow to cycle files in this folder"><kbd className="bg-white/10 px-1 py-0.5 rounded text-zinc-200">Ctrl ↔</kbd> File</span>
+                <span className="text-zinc-600">•</span>
+                <span title="Alt + Left/Right Arrow to switch week/folder"><kbd className="bg-white/10 px-1 py-0.5 rounded text-zinc-200">Alt ↔</kbd> Week</span>
+                <span className="text-zinc-600">•</span>
+                <span title="Shift + Left/Right Arrow to switch course/subject"><kbd className="bg-white/10 px-1 py-0.5 rounded text-zinc-200">Shift ↔</kbd> Subject</span>
+              </div>
+
               <button
                 onClick={() => onDownload(file)}
                 className="h-8 px-2.5 sm:px-3 rounded-lg text-xs font-medium bg-white/[0.06] hover:bg-white/[0.12] text-zinc-200 hover:text-white border border-white/10 transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer"
