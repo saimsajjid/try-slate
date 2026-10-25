@@ -429,36 +429,94 @@ See https://github.com/adobe-type-tools/cmap-resources
 
         <!-- Slate Centered Document Loading Screen Overlay -->
         <div id="slateLoadingOverlay" class="slateLoadingOverlay">
-          <div class="slateLoadingCard">
-            <div class="slateMascotBadge">
-              <div class="slateMascotAura"></div>
-              <svg class="slateMascotSvg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="2" y="2" width="60" height="60" rx="16" fill="#FFFFFF" stroke="#141414" stroke-width="2.5" />
-                <rect x="14" y="13" width="36" height="32" rx="12" fill="#141414" />
-                <circle cx="25" cy="26" r="4.5" fill="#FFFFFF" />
-                <circle cx="39" cy="26" r="4.5" fill="#FFFFFF" />
-                <circle class="slateEyePupil" cx="26.5" cy="26" r="2" fill="#141414" />
-                <circle class="slateEyePupil" cx="40.5" cy="26" r="2" fill="#141414" />
-                <circle cx="24" cy="24.5" r="1.2" fill="#FFFFFF" />
-                <circle cx="38" cy="24.5" r="1.2" fill="#FFFFFF" />
-                <line x1="26" y1="45" x2="23" y2="52" stroke="#141414" stroke-width="3" stroke-linecap="round" />
-                <line x1="38" y1="45" x2="41" y2="52" stroke="#141414" stroke-width="3" stroke-linecap="round" />
-              </svg>
+          <div class="slateLoadingCard" id="slateLoadingCard">
+            <!-- 1. Normal Loading Screen View -->
+            <div id="slateLoadingView" class="slateCardView">
+              <div class="slateMascotBadge">
+                <div class="slateMascotAura"></div>
+                <svg class="slateMascotSvg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="2" y="2" width="60" height="60" rx="16" fill="#FFFFFF" stroke="#141414" stroke-width="2.5" />
+                  <rect x="14" y="13" width="36" height="32" rx="12" fill="#141414" />
+                  <circle cx="25" cy="26" r="4.5" fill="#FFFFFF" />
+                  <circle cx="39" cy="26" r="4.5" fill="#FFFFFF" />
+                  <circle class="slateEyePupil" cx="26.5" cy="26" r="2" fill="#141414" />
+                  <circle class="slateEyePupil" cx="40.5" cy="26" r="2" fill="#141414" />
+                  <circle cx="24" cy="24.5" r="1.2" fill="#FFFFFF" />
+                  <circle cx="38" cy="24.5" r="1.2" fill="#FFFFFF" />
+                  <line x1="26" y1="45" x2="23" y2="52" stroke="#141414" stroke-width="3" stroke-linecap="round" />
+                  <line x1="38" y1="45" x2="41" y2="52" stroke="#141414" stroke-width="3" stroke-linecap="round" />
+                </svg>
+              </div>
+
+              <div class="slateLoadingTitle" id="slateLoadingDocTitle">Loading Document...</div>
+              <div class="slateLoadingNotice">
+                <span class="slateNoticeHighlight">First time opening?</span>
+                It takes a moment to download and save to your device disk. Afterwards, it opens instantly offline.
+              </div>
+
+              <div class="slateProgressBarTrack">
+                <div class="slateProgressBarFill" id="slateProgressFill"></div>
+              </div>
+
+              <div class="slateProgressMetrics">
+                <span class="slateStatusText" id="slateStatusText">Connecting &amp; caching...</span>
+                <span class="slatePercentText" id="slatePercentText">0%</span>
+              </div>
             </div>
 
-            <div class="slateLoadingTitle" id="slateLoadingDocTitle">Loading Document...</div>
-            <div class="slateLoadingNotice">
-              <span class="slateNoticeHighlight">First time opening?</span>
-              It takes a moment to download and save to your device disk. Afterwards, it opens instantly offline.
-            </div>
+            <!-- 2. Prominent Error & Cache Recovery View (Initially Hidden) -->
+            <div id="slateErrorView" class="slateCardView slateErrorView" style="display: none;">
+              <div class="slateErrorIconBadge">
+                <div class="slateErrorAura"></div>
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="slateErrorSvg">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/>
+                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+              </div>
 
-            <div class="slateProgressBarTrack">
-              <div class="slateProgressBarFill" id="slateProgressFill"></div>
-            </div>
+              <h2 class="slateErrorTitle">Unable to Display Document</h2>
+              <div class="slateErrorDocInfo">
+                <div class="slateErrorDocName" id="slateErrorDocName">Document</div>
+                <div class="slateErrorDocMeta" id="slateErrorDocMeta">PDF Document</div>
+              </div>
 
-            <div class="slateProgressMetrics">
-              <span class="slateStatusText" id="slateStatusText">Connecting &amp; caching...</span>
-              <span class="slatePercentText" id="slatePercentText">0%</span>
+              <div class="slateErrorExplanationBox">
+                <div class="slateErrorReasonRow">
+                  <span class="slateErrorReasonPill">Offline Cache Issue</span>
+                  <span class="slateErrorReasonDetail" id="slateErrorReasonDetail">The cached file is damaged or incomplete</span>
+                </div>
+                <p class="slateErrorHelpText">
+                  The local copy saved on your device failed to render or timed out during compilation.
+                </p>
+                <div class="slateErrorTipText">
+                  Clearing the local cache will purge the damaged copy and re-download a fresh, verified file from the cloud server.
+                </div>
+              </div>
+
+              <!-- Big, High-Contrast Action Buttons -->
+              <div class="slateErrorActionGroup">
+                <button type="button" id="slateBigRetryBtn" class="slateBtn slateBtnPrimary">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                  </svg>
+                  <span>Clear Cache &amp; Re-download</span>
+                </button>
+
+                <div class="slateErrorSecondaryRow">
+                  <button type="button" id="slateDirectDownloadBtn" class="slateBtn slateBtnSecondary" title="Download direct file to your device">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="7 10 12 15 17 10"/>
+                      <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    <span>Download File</span>
+                  </button>
+                  <button type="button" id="slateCloseModalBtn" class="slateBtn slateBtnTertiary" title="Close Preview">
+                    <span>Close</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -748,6 +806,10 @@ See https://github.com/adobe-type-tools/cmap-resources
         const slatePctEl = document.getElementById('slatePercentText');
         const slateStatusEl = document.getElementById('slateStatusText');
 
+        let slateFallbackTimeout = null;
+        let slateParseSlowTimeout = null;
+        let slateParseVerySlowTimeout = null;
+
         function hideSlateLoader() {
           if (!slateOverlay || slateOverlay.classList.contains('slate-loader-hidden')) return;
           slateOverlay.classList.add('slate-loader-hidden');
@@ -775,6 +837,42 @@ See https://github.com/adobe-type-tools/cmap-resources
           }
         }
 
+        function showCorruptError(reason) {
+          clearInterval(slatePollInterval);
+          if (slateFallbackTimeout) clearTimeout(slateFallbackTimeout);
+          if (slateParseSlowTimeout) clearTimeout(slateParseSlowTimeout);
+          if (slateParseVerySlowTimeout) clearTimeout(slateParseVerySlowTimeout);
+
+          const card = document.getElementById('slateLoadingCard');
+          const loadingView = document.getElementById('slateLoadingView');
+          const errorView = document.getElementById('slateErrorView');
+
+          if (card) card.classList.add('hasError');
+          if (loadingView) loadingView.style.display = 'none';
+          if (errorView) {
+            errorView.style.display = 'flex';
+
+            const nameEl = document.getElementById('slateErrorDocName');
+            const metaEl = document.getElementById('slateErrorDocMeta');
+            const detailEl = document.getElementById('slateErrorReasonDetail');
+
+            const params = new URLSearchParams(window.location.search);
+            const title = params.get('title') || 'Document';
+            const size = params.get('size');
+
+            if (nameEl) {
+              nameEl.textContent = title;
+              nameEl.title = title;
+            }
+            if (metaEl) {
+              metaEl.textContent = size ? 'PDF Document • ' + size : 'PDF Document';
+            }
+            if (detailEl && reason) {
+              detailEl.textContent = reason;
+            }
+          }
+        }
+
         function hookSlatePdfEvents() {
           if (!window.PDFViewerApplication) return;
           const app = window.PDFViewerApplication;
@@ -793,8 +891,11 @@ See https://github.com/adobe-type-tools/cmap-resources
                 app.eventBus.on('documentloaded', function() {
                   setTimeout(hideSlateLoader, 400);
                 });
-                app.eventBus.on('documenterror', function() {
-                  showCorruptError();
+                app.eventBus.on('documenterror', function(evt) {
+                  showCorruptError('The document structure could not be parsed or the file is corrupted.');
+                });
+                app.eventBus.on('documentiniterror', function(evt) {
+                  showCorruptError('Failed to initialize document engine.');
                 });
               }
             });
@@ -809,19 +910,6 @@ See https://github.com/adobe-type-tools/cmap-resources
                 updateSlateProgress(pct);
               }
             };
-          }
-        }
-
-        function showCorruptError() {
-          clearInterval(slatePollInterval);
-          if (slateStatusEl) {
-            slateStatusEl.innerHTML = '<span style="color:#EF4444;font-weight:600;">Document compilation failed.</span> <button id="slateRetryBtn" style="margin-left:8px;padding:3px 10px;background:#D97706;color:white;border-radius:6px;border:none;font-weight:bold;cursor:pointer;font-size:11px;">Clear Cache & Retry</button>';
-            const rBtn = document.getElementById('slateRetryBtn');
-            if (rBtn) {
-              rBtn.addEventListener('click', function() {
-                window.parent.postMessage({ action: 'forceReloadPdf' }, '*');
-              });
-            }
           }
         }
 
@@ -847,16 +935,57 @@ See https://github.com/adobe-type-tools/cmap-resources
           const page1 = document.querySelector('.page[data-page-number="1"] canvas');
           if (page1) {
             clearInterval(slatePollInterval);
+            if (slateFallbackTimeout) clearTimeout(slateFallbackTimeout);
+            if (slateParseSlowTimeout) clearTimeout(slateParseSlowTimeout);
+            if (slateParseVerySlowTimeout) clearTimeout(slateParseVerySlowTimeout);
             hideSlateLoader();
           }
         }, 80);
 
-        setTimeout(function() {
+        // When loading large documents (e.g. 50MB+ textbooks), update progress message gracefully
+        slateParseSlowTimeout = setTimeout(function() {
+          const loadingView = document.getElementById('slateLoadingView');
+          if (loadingView && loadingView.style.display !== 'none') {
+            updateSlateProgress(100, 'Parsing pages (large document)...');
+          }
+        }, 5000);
+
+        slateParseVerySlowTimeout = setTimeout(function() {
+          const loadingView = document.getElementById('slateLoadingView');
+          if (loadingView && loadingView.style.display !== 'none') {
+            updateSlateProgress(100, 'Compiling page structures...');
+          }
+        }, 12000);
+
+        // Generous safeguard timeout (35 seconds instead of premature 8 seconds)
+        slateFallbackTimeout = setTimeout(function() {
           clearInterval(slatePollInterval);
           if (window.PDFViewerApplication && (!window.PDFViewerApplication.pagesCount || window.PDFViewerApplication.pagesCount === 0)) {
-            showCorruptError();
+            showCorruptError('Document compilation timed out or cache is incomplete.');
           }
-        }, 8000);
+        }, 35000);
+
+        // Action button event listeners
+        const retryBtn = document.getElementById('slateBigRetryBtn');
+        if (retryBtn) {
+          retryBtn.addEventListener('click', function() {
+            window.parent.postMessage({ action: 'forceReloadPdf' }, '*');
+          });
+        }
+
+        const directDlBtn = document.getElementById('slateDirectDownloadBtn');
+        if (directDlBtn) {
+          directDlBtn.addEventListener('click', function() {
+            window.parent.postMessage({ action: 'downloadFile' }, '*');
+          });
+        }
+
+        const closeModalBtn = document.getElementById('slateCloseModalBtn');
+        if (closeModalBtn) {
+          closeModalBtn.addEventListener('click', function() {
+            window.parent.postMessage({ action: 'closePreview' }, '*');
+          });
+        }
 
         const closeBtn = document.getElementById('closeButton');
         if (closeBtn) {

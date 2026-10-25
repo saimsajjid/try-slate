@@ -2604,6 +2604,47 @@ export default function App() {
     displayName: string;
   }
 
+  // Canonical URL normalizer to prevent duplicate file name collisions across folders
+  const normalizeUrl = (url?: string): string => {
+    if (!url) return '';
+    try {
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        const parsed = new URL(url);
+        return decodeURIComponent(parsed.pathname).toLowerCase().trim();
+      }
+    } catch {}
+    return decodeURIComponent(url.split('?')[0].split('#')[0]).toLowerCase().trim();
+  };
+
+  // Robust file matcher that prioritizes canonical URLs and disambiguates duplicate file names by folder
+  const isFileMatch = (
+    entryFile: { url?: string; name: string },
+    targetFile: { url?: string; name: string } | null,
+    entryTrail?: FolderItem[],
+    currentTrail?: FolderItem[]
+  ): boolean => {
+    if (!targetFile) return false;
+    const normEntry = normalizeUrl(entryFile.url);
+    const normTarget = normalizeUrl(targetFile.url);
+
+    // 1. Primary & Exact: Canonical URL comparison
+    if (normEntry && normTarget) {
+      return normEntry === normTarget;
+    }
+
+    // 2. Secondary disambiguation: require BOTH name and folder to match!
+    if (entryFile.name.toLowerCase() === targetFile.name.toLowerCase()) {
+      if (entryTrail && currentTrail && entryTrail.length > 0 && currentTrail.length > 0) {
+        const folderA = entryTrail[entryTrail.length - 1].name.toLowerCase();
+        const folderB = currentTrail[currentTrail.length - 1].name.toLowerCase();
+        return folderA === folderB;
+      }
+      return true;
+    }
+
+    return false;
+  };
+
   // Collect all folder sections that contain files in a course (recursive DFS traversal)
   const collectCourseSections = (course: CourseItem): CourseSection[] => {
     const sections: CourseSection[] = [];
@@ -2696,10 +2737,8 @@ export default function App() {
 
     let currentIdx = -1;
     if (previewFile) {
-      currentIdx = allCourseFiles.findIndex(
-        (entry) =>
-          entry.file.url === previewFile.url ||
-          entry.file.name.toLowerCase() === previewFile.name.toLowerCase()
+      currentIdx = allCourseFiles.findIndex((entry) =>
+        isFileMatch(entry.file, previewFile, entry.trail, activeFolderTrail)
       );
     } else {
       // Preview modal is closed: determine start index from current folder or focused file
@@ -2707,8 +2746,8 @@ export default function App() {
         const curFolder = activeFolderTrail[activeFolderTrail.length - 1];
         if (keyboardIndex >= visibleFolders.length && keyboardIndex < visibleFolders.length + visibleFiles.length) {
           const focusedFile = visibleFiles[keyboardIndex - visibleFolders.length];
-          currentIdx = allCourseFiles.findIndex(
-            (entry) => entry.file.url === focusedFile.url || entry.file.name.toLowerCase() === focusedFile.name.toLowerCase()
+          currentIdx = allCourseFiles.findIndex((entry) =>
+            isFileMatch(entry.file, focusedFile, entry.trail, activeFolderTrail)
           );
         } else {
           const folderIndices = allCourseFiles
@@ -2766,10 +2805,8 @@ export default function App() {
     let currentSecIdx = -1;
     if (previewFile) {
       currentSecIdx = sections.findIndex((sec) =>
-        sec.files.some(
-          (f) =>
-            f.url === previewFile.url ||
-            f.name.toLowerCase() === previewFile.name.toLowerCase()
+        sec.files.some((f) =>
+          isFileMatch(f, previewFile, sec.trail, activeFolderTrail)
         )
       );
     }

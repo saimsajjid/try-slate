@@ -151,7 +151,7 @@ export function FilePreviewModal({
 
   // General folder navigation context for cycling between any files in the folder
   const currentFolderIndex = file
-    ? (folderFiles || []).findIndex((f) => f.url === file.url || f.name === file.name)
+    ? (folderFiles || []).findIndex((f) => (f.url && file.url && f.url === file.url) || f.name === file.name)
     : -1;
   const hasPrevFolderFile = currentFolderIndex > 0;
   const hasNextFolderFile =
@@ -837,23 +837,73 @@ export function FilePreviewModal({
           )}
 
           {error && (
-            <div className="flex-1 flex items-center justify-center p-6">
-              <div className="p-8 text-center max-w-md bg-white border-2 border-red-500 rounded-2xl shadow-[4px_4px_0px_#EF4444] space-y-3">
-                <h3 className="font-bold text-red-600 text-sm">Preview Unavailable</h3>
-                <p className="text-xs text-neutral-600 font-mono">{error}</p>
-                <div className="flex items-center justify-center gap-2">
+            <div className="flex-1 flex items-center justify-center p-6 bg-[#0A0A0C]">
+              <div className="bg-[#141417] border border-[#222226] rounded-2xl p-6 sm:p-8 max-w-md w-full flex flex-col items-center text-center shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                {/* Warning Icon Badge with Aura */}
+                <div className="relative w-14 h-14 mb-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center shrink-0">
+                  <div className="absolute -inset-1 rounded-2xl bg-amber-500/15 animate-pulse" />
+                  <svg className="w-7 h-7 text-amber-500 relative z-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                </div>
+
+                <h3 className="text-base sm:text-lg font-bold text-white mb-1 tracking-tight">
+                  Unable to Display Document
+                </h3>
+                <div className="mb-4 max-w-full px-2">
+                  <p className="text-xs font-semibold text-zinc-300 truncate" title={file.name}>{file.name}</p>
+                  <p className="text-[11px] font-mono text-zinc-500 mt-0.5">{file.type.toUpperCase()} Document • {file.size || 'Unknown size'}</p>
+                </div>
+
+                <div className="w-full text-left bg-white/[0.03] border border-white/[0.07] rounded-xl p-3.5 mb-5 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider bg-rose-500/15 text-rose-400 border border-rose-500/30 px-1.5 py-0.5 rounded shrink-0">
+                      Offline Cache Issue
+                    </span>
+                    <span className="text-xs font-medium text-zinc-300 truncate font-mono">
+                      {error}
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    The cached copy saved on your device failed to render or was incomplete.
+                  </p>
+                  <p className="text-[11px] text-zinc-500 leading-normal pt-1 border-t border-white/[0.06]">
+                    Clearing the local cache will purge the damaged file and download a clean, verified copy from the server.
+                  </p>
+                </div>
+
+                <div className="w-full flex flex-col gap-2.5">
                   <button
                     onClick={handleForceReload}
-                    className="px-4 py-2 rounded-xl bg-amber-500 text-white text-xs font-bold hover:bg-amber-600 shadow-[2px_2px_0px_#141414]"
+                    className="w-full h-11 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-98 transition-all cursor-pointer"
                   >
-                    Clear Cache & Retry
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+                    </svg>
+                    Clear Cache &amp; Re-download
                   </button>
-                  <button
-                    onClick={() => onDownload(file)}
-                    className="px-4 py-2 rounded-xl bg-[#141414] text-white text-xs font-bold hover:bg-neutral-800 shadow-[2px_2px_0px_#141414]"
-                  >
-                    Download File
-                  </button>
+
+                  <div className="w-full flex gap-2">
+                    <button
+                      onClick={() => onDownload(file)}
+                      className="flex-1 h-9 px-3 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-zinc-200 hover:text-white border border-white/10 text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                      </svg>
+                      Direct Download
+                    </button>
+                    <button
+                      onClick={onClose}
+                      className="h-9 px-4 rounded-lg bg-transparent hover:bg-white/[0.06] text-zinc-400 hover:text-white border border-white/10 text-xs font-medium transition-all cursor-pointer"
+                    >
+                      Close
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
