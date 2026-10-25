@@ -837,7 +837,13 @@ See https://github.com/adobe-type-tools/cmap-resources
 
         setTimeout(function() {
           clearInterval(slatePollInterval);
-        }, 45000);
+          if (window.PDFViewerApplication && (!window.PDFViewerApplication.pagesCount || window.PDFViewerApplication.pagesCount === 0)) {
+            if (slateStatusEl) {
+              slateStatusEl.textContent = 'Document corrupted or incomplete on server.';
+              slateStatusEl.style.color = '#EF4444';
+            }
+          }
+        }, 15000);
 
         const closeBtn = document.getElementById('closeButton');
         if (closeBtn) {
