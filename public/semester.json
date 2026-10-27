@@ -442,6 +442,17 @@
               "url": "/academic-files/Courses/COMP-111L_Programming_Fundamentals_Lab/Week_04/COMP-111L_Lab_02_Datatypes_and_Variables.pdf"
             }
           ]
+        },
+        {
+          "name": "Week 05",
+          "files": [
+            {
+              "name": "COMP-111L_Lab_03_Type_Conversion_and_Expressions.pdf",
+              "size": "348 KB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/COMP-111L_Programming_Fundamentals_Lab/Week_05/COMP-111L_Lab_03_Type_Conversion_and_Expressions.pdf"
+            }
+          ]
         }
       ],
       "files": []
@@ -606,6 +617,17 @@
               "size": "772 KB",
               "type": "pdf",
               "url": "/academic-files/Courses/SS-103_English_Language_and_Communication_Skills/Course_Card/ELCS_Course_Card_Fall_2026.pdf"
+            }
+          ]
+        },
+        {
+          "name": "Reference Materials",
+          "files": [
+            {
+              "name": "Sabir_Shah_Office_Hours_and_Appointments.md",
+              "size": "522 B",
+              "type": "md",
+              "url": "/academic-files/Courses/SS-103_English_Language_and_Communication_Skills/Reference_Materials/Sabir_Shah_Office_Hours_and_Appointments.md"
             }
           ]
         },
