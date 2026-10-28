@@ -519,6 +519,23 @@
               "url": "/academic-files/Courses/COMP-105_Fundamentals_of_ICT/Week_04/Lecture_03_Software.pdf"
             }
           ]
+        },
+        {
+          "name": "Week 05",
+          "files": [
+            {
+              "name": "Lecture_04_Microprocessor.pdf",
+              "size": "367 KB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/COMP-105_Fundamentals_of_ICT/Week_05/Lecture_04_Microprocessor.pdf"
+            },
+            {
+              "name": "Lecture_05_Computer_Memory.pdf",
+              "size": "310 KB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/COMP-105_Fundamentals_of_ICT/Week_05/Lecture_05_Computer_Memory.pdf"
+            }
+          ]
         }
       ],
       "files": []
@@ -628,6 +645,48 @@
               "size": "522 B",
               "type": "md",
               "url": "/academic-files/Courses/SS-103_English_Language_and_Communication_Skills/Reference_Materials/Sabir_Shah_Office_Hours_and_Appointments.md"
+            }
+          ],
+          "folders": [
+            {
+              "name": "Primary Book",
+              "files": [
+                {
+                  "name": "High School English Grammar and Composition - Wren and Martin.pdf",
+                  "size": "22.2 MB",
+                  "type": "pdf",
+                  "url": "/academic-files/Courses/SS-103_English_Language_and_Communication_Skills/Reference_Materials/Primary Book/High School English Grammar and Composition - Wren and Martin.pdf"
+                },
+                {
+                  "name": "Study Skills in English (2nd ed) - Michael J. Wallace.pdf",
+                  "size": "11.2 MB",
+                  "type": "pdf",
+                  "url": "/academic-files/Courses/SS-103_English_Language_and_Communication_Skills/Reference_Materials/Primary Book/Study Skills in English (2nd ed) - Michael J. Wallace.pdf"
+                },
+                {
+                  "name": "The Interpersonal Communication Book (13th ed) - Joseph A. DeVito.pdf",
+                  "size": "30.4 MB",
+                  "type": "pdf",
+                  "url": "/academic-files/Courses/SS-103_English_Language_and_Communication_Skills/Reference_Materials/Primary Book/The Interpersonal Communication Book (13th ed) - Joseph A. DeVito.pdf"
+                }
+              ]
+            },
+            {
+              "name": "Reference Books",
+              "files": [
+                {
+                  "name": "Advanced Language Practice (3rd ed) - Michael Vince.pdf",
+                  "size": "13.6 MB",
+                  "type": "pdf",
+                  "url": "/academic-files/Courses/SS-103_English_Language_and_Communication_Skills/Reference_Materials/Reference Books/Advanced Language Practice (3rd ed) - Michael Vince.pdf"
+                },
+                {
+                  "name": "How to Win Friends and Influence People - Dale Carnegie.pdf",
+                  "size": "1.0 MB",
+                  "type": "pdf",
+                  "url": "/academic-files/Courses/SS-103_English_Language_and_Communication_Skills/Reference_Materials/Reference Books/How to Win Friends and Influence People - Dale Carnegie.pdf"
+                }
+              ]
             }
           ]
         },
