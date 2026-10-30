@@ -374,6 +374,17 @@
               "url": "/academic-files/Courses/COMP-111_Programming_Fundamentals/Week_04/Lecture_4_Datatype.pdf"
             }
           ]
+        },
+        {
+          "name": "Week 05",
+          "files": [
+            {
+              "name": "PF_Reference_Switch_Statements.pdf",
+              "size": "34 KB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/COMP-111_Programming_Fundamentals/Week_05/PF_Reference_Switch_Statements.pdf"
+            }
+          ]
         }
       ],
       "files": []
@@ -897,6 +908,17 @@
               "url": "/academic-files/Courses/SS-111_Islamic_Studies/Week_04/Lecture_Link.md"
             }
           ]
+        },
+        {
+          "name": "Week 05",
+          "files": [
+            {
+              "name": "Lecture_Link.md",
+              "size": "672 B",
+              "type": "md",
+              "url": "/academic-files/Courses/SS-111_Islamic_Studies/Week_05/Lecture_Link.md"
+            }
+          ]
         }
       ],
       "files": []
@@ -915,7 +937,7 @@
           "files": [
             {
               "name": "Course_Card_Pakistan_Studies.pdf",
-              "size": "430 KB",
+              "size": "392 KB",
               "type": "pdf",
               "url": "/academic-files/Courses/SS-113_Pakistan_Studies/Course_Card/Course_Card_Pakistan_Studies.pdf"
             }
@@ -1031,9 +1053,44 @@
             },
             {
               "name": "Lecture_8_How_Transitions_Between_Military_And_Politics_Occurred.pdf",
-              "size": "5.6 MB",
+              "size": "4.8 MB",
               "type": "pdf",
               "url": "/academic-files/Courses/SS-113_Pakistan_Studies/Week_04/Lecture_8_How_Transitions_Between_Military_And_Politics_Occurred.pdf"
+            }
+          ]
+        },
+        {
+          "name": "Week 06",
+          "files": [
+            {
+              "name": "Lecture_09_Video_Link.md",
+              "size": "713 B",
+              "type": "md",
+              "url": "/academic-files/Courses/SS-113_Pakistan_Studies/Week_06/Lecture_09_Video_Link.md"
+            },
+            {
+              "name": "Lecture_9_Race_Ethnicity_and_Nationalism_in_Pakistan.pdf",
+              "size": "5.5 MB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/SS-113_Pakistan_Studies/Week_06/Lecture_9_Race_Ethnicity_and_Nationalism_in_Pakistan.pdf"
+            },
+            {
+              "name": "Lecture_10_Video_Link.md",
+              "size": "677 B",
+              "type": "md",
+              "url": "/academic-files/Courses/SS-113_Pakistan_Studies/Week_06/Lecture_10_Video_Link.md"
+            },
+            {
+              "name": "Lecture_10_Civil_Society_in_Pakistan.pdf",
+              "size": "1.0 MB",
+              "type": "pdf",
+              "url": "/academic-files/Courses/SS-113_Pakistan_Studies/Week_06/Lecture_10_Civil_Society_in_Pakistan.pdf"
+            },
+            {
+              "name": "Mid_Semester_Examination_Syllabus.md",
+              "size": "1.1 KB",
+              "type": "md",
+              "url": "/academic-files/Courses/SS-113_Pakistan_Studies/Week_06/Mid_Semester_Examination_Syllabus.md"
             }
           ]
         }
