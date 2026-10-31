@@ -28,7 +28,7 @@ interface DocManifest {
   title?: string;
 }
 
-const VAULT_API_BASE = 'https://api.tryaudrio.app/academic-files';
+const API_BASE = 'https://api.tryaudrio.app/academic-files';
 
 export const DocumentReader: React.FC<DocumentReaderProps> = ({
   fileUrl,
@@ -61,7 +61,7 @@ export const DocumentReader: React.FC<DocumentReaderProps> = ({
     setCurrentPage(1);
     setJumpPageText('1');
 
-    const manifestUrl = `${VAULT_API_BASE}/preview-manifest?doc=${encodeURIComponent(cleanDocPath)}`;
+    const manifestUrl = `${API_BASE}/preview-manifest?doc=${encodeURIComponent(cleanDocPath)}`;
 
     fetch(manifestUrl)
       .then(async (res) => {
@@ -216,11 +216,11 @@ export const DocumentReader: React.FC<DocumentReaderProps> = ({
 
   // Page URL generator
   const getPageUrl = (pageNumber: number) => {
-    return `${VAULT_API_BASE}/preview-page?doc=${encodeURIComponent(cleanDocPath)}&page=${pageNumber}&dpi=144`;
+    return `${API_BASE}/preview-page?doc=${encodeURIComponent(cleanDocPath)}&page=${pageNumber}&dpi=144`;
   };
 
   const getThumbnailUrl = (pageNumber: number) => {
-    return `${VAULT_API_BASE}/preview-page?doc=${encodeURIComponent(cleanDocPath)}&page=${pageNumber}&dpi=72`;
+    return `${API_BASE}/preview-page?doc=${encodeURIComponent(cleanDocPath)}&page=${pageNumber}&dpi=72`;
   };
 
   const isSlideDeck = manifest ? manifest.aspectRatio > 1.2 : false;

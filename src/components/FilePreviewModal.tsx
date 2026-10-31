@@ -39,7 +39,7 @@ interface FilePreviewModalProps {
 
 const IMAGE_EXTENSIONS = ['jpeg', 'jpg', 'png', 'svg', 'webp', 'gif'];
 const isImage = (type: string) => IMAGE_EXTENSIONS.includes(type.toLowerCase());
-const VAULT_STREAM_HOST = import.meta.env.PROD ? 'https://api.tryaudrio.app' : '';
+const STREAM_HOST = import.meta.env.PROD ? 'https://api.tryaudrio.app' : '';
 
 export function FilePreviewModal({
   file,
@@ -58,7 +58,7 @@ export function FilePreviewModal({
 
   const handleForceReload = async () => {
     if (file) {
-      const targetUrl = file.url.startsWith('http') ? file.url : `${VAULT_STREAM_HOST}${file.url}`;
+      const targetUrl = file.url.startsWith('http') ? file.url : `${STREAM_HOST}${file.url}`;
       await purgePdfFromDisk(targetUrl);
     }
     setError(null);
@@ -343,7 +343,7 @@ export function FilePreviewModal({
     setImageZoom(1);
 
     const ext = file.type.toLowerCase();
-    const targetUrl = file.url.startsWith('http') ? file.url : `${VAULT_STREAM_HOST}${file.url}`;
+    const targetUrl = file.url.startsWith('http') ? file.url : `${STREAM_HOST}${file.url}`;
 
     // 1. PDF: Handled by official Mozilla PDF.js Web Viewer with on-disk offline caching & single-stream progress
     if (ext === 'pdf') {
@@ -521,7 +521,7 @@ export function FilePreviewModal({
         if (hasNext) {
           const nextFile = imageFiles[currentImageIndex + 1];
           if (!blobCacheRef.current.has(nextFile.url)) {
-            const nextTarget = nextFile.url.startsWith('http') ? nextFile.url : `${VAULT_STREAM_HOST}${nextFile.url}`;
+            const nextTarget = nextFile.url.startsWith('http') ? nextFile.url : `${STREAM_HOST}${nextFile.url}`;
             fetch(nextTarget)
               .then((res) => res.blob())
               .then((b) => {
@@ -537,7 +537,7 @@ export function FilePreviewModal({
         if (hasPrev) {
           const prevFile = imageFiles[currentImageIndex - 1];
           if (!blobCacheRef.current.has(prevFile.url)) {
-            const prevTarget = prevFile.url.startsWith('http') ? prevFile.url : `${VAULT_STREAM_HOST}${prevFile.url}`;
+            const prevTarget = prevFile.url.startsWith('http') ? prevFile.url : `${STREAM_HOST}${prevFile.url}`;
             fetch(prevTarget)
               .then((res) => res.blob())
               .then((b) => {
@@ -1105,7 +1105,7 @@ export function FilePreviewModal({
                         pdfIframeRef.current?.focus();
                       } catch {}
                     }}
-                    src={`/pdfjs/web/viewer.html?file=${encodeURIComponent(pdfSourceUrl || `${VAULT_STREAM_HOST}${file.url}`)}&title=${encodeURIComponent(file.name)}&size=${encodeURIComponent(file.size || '')}&folderIndex=${currentFolderIndex + 1}&folderTotal=${folderFiles?.length || 1}#zoom=page-fit`}
+                    src={`/pdfjs/web/viewer.html?file=${encodeURIComponent(pdfSourceUrl || `${STREAM_HOST}${file.url}`)}&title=${encodeURIComponent(file.name)}&size=${encodeURIComponent(file.size || '')}&folderIndex=${currentFolderIndex + 1}&folderTotal=${folderFiles?.length || 1}#zoom=page-fit`}
                     className="w-full h-full border-none bg-[#0A0A0C] block"
                     title={file.name}
                   />

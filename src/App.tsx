@@ -2727,7 +2727,7 @@ export default function App() {
         if (isPdf) {
           const buffer = await response.arrayBuffer();
           // Write to persistent disk cache asynchronously so student can read offline later
-          savePdfToDisk(fullUrl, buffer).catch((err) => console.warn('Vault cache error:', err));
+          savePdfToDisk(fullUrl, buffer).catch((err) => console.warn('Academic cache error:', err));
           const blob = new Blob([buffer], { type: 'application/pdf' });
           const blobUrl = URL.createObjectURL(blob);
           const a = document.createElement('a');
@@ -2740,7 +2740,7 @@ export default function App() {
           return;
         } else if (isText) {
           const text = await response.text();
-          saveTextToDisk(fullUrl, text).catch((err) => console.warn('Vault cache error:', err));
+          saveTextToDisk(fullUrl, text).catch((err) => console.warn('Academic cache error:', err));
           const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
           const blobUrl = URL.createObjectURL(blob);
           const a = document.createElement('a');
@@ -4189,7 +4189,7 @@ export default function App() {
                     className="font-bold text-base md:text-lg text-[#141414]"
                     style={{ fontFamily: '"Space Grotesk", sans-serif' }}
                   >
-                    Courses & Academic Vault
+                    Courses
                   </h2>
                   <span className="text-xs font-mono font-bold text-neutral-600 bg-white border border-[#141414] px-2 py-0.5 rounded-md shadow-[1px_1px_0px_#141414]">
                     {data.courses.length} courses

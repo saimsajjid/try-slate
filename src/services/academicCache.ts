@@ -7,7 +7,7 @@
  * 3. Works 100% offline across all devices (Windows, Mac, iOS Safari, Android).
  */
 
-const CACHE_NAME = 'slate-academic-vault-v1';
+const CACHE_NAME = 'slate-academic-cache-v1';
 const IDB_NAME = 'slate_academic_offline_idb';
 const IDB_STORE = 'academic_blobs';
 

@@ -14,7 +14,7 @@
 - **Instant 0ms Navigation:** JSON-driven recursive tree architecture (`semester_1.json` and `timetable.json`). Course selection, weekly folder diving, and schedule lookups execute in client memory with zero server roundtrips.
 - **In-Browser Document Previewer:** Preview PDFs, PowerPoint slides (`.pptx`), Word documents (`.docx`), Markdown notes, and video lectures directly in the browser with zero external download manager popups.
 - **Persistent On-Disk Offline Caching:**
-  - Full-file download on initial access, saved persistently to device disk via Cache API (`slate-academic-vault-v1`) with IndexedDB fallback (`academicCache.ts`).
+  - Full-file download on initial access, saved persistently to device disk via Cache API (`slate-academic-cache-v1`) with IndexedDB fallback (`academicCache.ts`).
   - Subsequent opens load instantaneously in 0ms with complete offline availability across mobile and desktop.
   - Zero module-level RAM hoarding: documents are handled via ephemeral Blob URLs revoked immediately upon closing the modal.
 - **Animated Slate Mascot Loading Card:**

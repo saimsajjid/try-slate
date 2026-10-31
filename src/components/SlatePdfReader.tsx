@@ -26,7 +26,7 @@ interface SlatePdfReaderProps {
   onClose?: () => void;
 }
 
-const VAULT_STREAM_HOST = 'https://api.tryaudrio.app';
+const STREAM_HOST = 'https://api.tryaudrio.app';
 
 export const SlatePdfReader: React.FC<SlatePdfReaderProps> = ({
   fileUrl,
@@ -93,7 +93,7 @@ export const SlatePdfReader: React.FC<SlatePdfReaderProps> = ({
     if (!clean.startsWith('/academic-files')) {
       clean = `/academic-files${clean}`;
     }
-    return `${VAULT_STREAM_HOST}${clean}`;
+    return `${STREAM_HOST}${clean}`;
   }, [fileUrl]);
 
   // Auto-hide controls timer on activity
@@ -107,7 +107,7 @@ export const SlatePdfReader: React.FC<SlatePdfReaderProps> = ({
     }, 3500);
   }, [isScrubbing]);
 
-  // 1. Load PDF from Pure On-Disk Cache or Stream from Vault
+  // 1. Load PDF from Pure On-Disk Cache or Stream
   useEffect(() => {
     let isMounted = true;
     const targetUrl = getFullDownloadUrl();
