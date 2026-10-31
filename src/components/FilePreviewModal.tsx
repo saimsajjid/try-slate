@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import * as docx from 'docx-preview';
 import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import { ReactPptxViewer } from '@extend-ai/react-pptx';
 import '@extend-ai/react-pptx/styles.css';
 import { getPdfFromDisk, savePdfToDisk, purgePdfFromDisk, isBufferValidPdf, getTextFromDisk, saveTextToDisk } from '../services/academicCache';
@@ -10,8 +11,10 @@ marked.use({
   breaks: true,
   renderer: {
     link({ href, title, text }) {
+      const isSafeProtocol = /^(https?:|mailto:|#)/i.test(href);
+      const safeHref = isSafeProtocol ? href : '#';
       const titleAttr = title ? ` title="${title}"` : '';
-      return `<a href="${href}" target="_blank" rel="noopener noreferrer"${titleAttr}>${text}</a>`;
+      return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer"${titleAttr}>${text}</a>`;
     },
   },
 });
@@ -74,8 +77,127 @@ export function FilePreviewModal({
   // PPTX binary buffer for Wasm presentation viewer
   const [pptxBuffer, setPptxBuffer] = useState<ArrayBuffer | null>(null);
 
-  // Image zoom state
+  // Image zoom & pan state (Issue 13: Drag & Pan in Lightbox)
   const [imageZoom, setImageZoom] = useState(1);
+  const [panPosition, setPanPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef({ x: 0, y: 0, startPanX: 0, startPanY: 0 });
+  const touchStartRef = useRef<{ dist?: number; x: number; y: number; startPanX: number; startPanY: number }>({
+    x: 0,
+    y: 0,
+    startPanX: 0,
+    startPanY: 0,
+  });
+
+  useEffect(() => {
+    if (imageZoom <= 1) {
+      setPanPosition({ x: 0, y: 0 });
+    }
+  }, [imageZoom, file]);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (imageZoom <= 1) return;
+    try {
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {}
+    setIsDragging(true);
+    dragStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      startPanX: panPosition.x,
+      startPanY: panPosition.y,
+    };
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDragging || imageZoom <= 1) return;
+    e.preventDefault();
+    const dx = e.clientX - dragStartRef.current.x;
+    const dy = e.clientY - dragStartRef.current.y;
+    setPanPosition({
+      x: dragStartRef.current.startPanX + dx,
+      y: dragStartRef.current.startPanY + dy,
+    });
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    try {
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+    setIsDragging(false);
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (imageZoom <= 1) return;
+    e.preventDefault();
+    setIsDragging(true);
+    dragStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      startPanX: panPosition.x,
+      startPanY: panPosition.y,
+    };
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || imageZoom <= 1) return;
+    e.preventDefault();
+    const dx = e.clientX - dragStartRef.current.x;
+    const dy = e.clientY - dragStartRef.current.y;
+    setPanPosition({
+      x: dragStartRef.current.startPanX + dx,
+      y: dragStartRef.current.startPanY + dy,
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      const t = e.touches[0];
+      touchStartRef.current = {
+        x: t.clientX,
+        y: t.clientY,
+        startPanX: panPosition.x,
+        startPanY: panPosition.y,
+      };
+      if (imageZoom > 1) {
+        setIsDragging(true);
+      }
+    } else if (e.touches.length === 2) {
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      touchStartRef.current.dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 1 && imageZoom > 1) {
+      const t = e.touches[0];
+      const dx = t.clientX - touchStartRef.current.x;
+      const dy = t.clientY - touchStartRef.current.y;
+      setPanPosition({
+        x: touchStartRef.current.startPanX + dx,
+        y: touchStartRef.current.startPanY + dy,
+      });
+    } else if (e.touches.length === 2 && touchStartRef.current.dist) {
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      const factor = dist / touchStartRef.current.dist;
+      if (Math.abs(factor - 1) > 0.05) {
+        setImageZoom((z) => Math.min(3.5, Math.max(0.75, Math.round(z * factor * 20) / 20)));
+        touchStartRef.current.dist = dist;
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    touchStartRef.current.dist = undefined;
+  };
 
   // PDF iframe ref
   const pdfIframeRef = useRef<HTMLIFrameElement>(null);
@@ -101,16 +223,41 @@ export function FilePreviewModal({
     };
   }, [file, reloadCounter]);
 
-  // Revoke all cached blob URLs on modal unmount
+  const prevBlobUrlRef = useRef<string | null>(null);
+
+  // Revoke previous blob URL when pdfSourceUrl changes (HIGH-3)
+  useEffect(() => {
+    if (pdfSourceUrl && pdfSourceUrl.startsWith('blob:')) {
+      if (prevBlobUrlRef.current && prevBlobUrlRef.current !== pdfSourceUrl) {
+        URL.revokeObjectURL(prevBlobUrlRef.current);
+      }
+      prevBlobUrlRef.current = pdfSourceUrl;
+    }
+  }, [pdfSourceUrl]);
+
+  // Revoke on modal close when file transitions to null (HIGH-3)
+  useEffect(() => {
+    if (!file) {
+      if (prevBlobUrlRef.current) {
+        URL.revokeObjectURL(prevBlobUrlRef.current);
+        prevBlobUrlRef.current = null;
+      }
+      setPdfSourceUrl('');
+    }
+  }, [file]);
+
+  // Revoke all cached image blob URLs on modal unmount
   useEffect(() => {
     return () => {
-      blobCacheRef.current.forEach((url) => URL.revokeObjectURL(url));
-      blobCacheRef.current.clear();
-      if (pdfSourceUrl && pdfSourceUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(pdfSourceUrl);
+      const currentBlobCache = blobCacheRef.current;
+      currentBlobCache.forEach((url) => URL.revokeObjectURL(url));
+      currentBlobCache.clear();
+      if (prevBlobUrlRef.current) {
+        URL.revokeObjectURL(prevBlobUrlRef.current);
+        prevBlobUrlRef.current = null;
       }
     };
-  }, [pdfSourceUrl]);
+  }, []);
 
   const ext = file ? file.type.toLowerCase() : '';
   const isCurrentAnImage = isImage(ext);
@@ -122,16 +269,24 @@ export function FilePreviewModal({
         try {
           pdfIframeRef.current?.contentWindow?.focus();
           pdfIframeRef.current?.focus();
-        } catch (e) {}
+        } catch {}
       }, 150);
       return () => clearTimeout(timer);
     }
   }, [ext, file, pdfSourceUrl]);
 
+  // File matching helper ignoring placeholder '#' or empty URLs (HIGH-2)
+  const isMatchingFile = (a: PreviewFile, b: PreviewFile) => {
+    if (a.url && b.url && a.url !== '#' && b.url !== '#' && a.url !== b.name) {
+      return a.url === b.url;
+    }
+    return a.name.toLowerCase() === b.name.toLowerCase();
+  };
+
   // Gallery context for navigating images in the same folder
   const imageFiles = (folderFiles || []).filter((f) => isImage(f.type));
   const currentImageIndex = file
-    ? imageFiles.findIndex((f) => f.url === file.url || f.name === file.name)
+    ? imageFiles.findIndex((f) => isMatchingFile(f, file))
     : -1;
   const hasImageGallery = isCurrentAnImage && currentImageIndex !== -1 && imageFiles.length > 1;
   const hasPrev = currentImageIndex > 0;
@@ -151,7 +306,7 @@ export function FilePreviewModal({
 
   // General folder navigation context for cycling between any files in the folder
   const currentFolderIndex = file
-    ? (folderFiles || []).findIndex((f) => (f.url && file.url && f.url === file.url) || f.name === file.name)
+    ? (folderFiles || []).findIndex((f) => isMatchingFile(f, file))
     : -1;
   const hasPrevFolderFile = currentFolderIndex > 0;
   const hasNextFolderFile =
@@ -408,11 +563,12 @@ export function FilePreviewModal({
         if (!isMounted) return;
         if (ext === 'md') {
           const parsed = marked.parse(rawText);
+          const sanitize = (html: string) => DOMPurify.sanitize(html);
           if (typeof parsed === 'string') {
-            setMarkdownHtml(parsed);
+            setMarkdownHtml(sanitize(parsed));
           } else {
             parsed.then((h) => {
-              if (isMounted) setMarkdownHtml(h);
+              if (isMounted) setMarkdownHtml(sanitize(h));
             });
           }
         } else {
@@ -490,51 +646,63 @@ export function FilePreviewModal({
       };
     }
 
-    // 4. Word Documents (.docx)
+    // 4. Word Documents (.docx) (MED-5: Async mount safety)
     if (ext === 'docx') {
+      let isMounted = true;
+      let timer: number | null = null;
       fetch(targetUrl)
         .then((res) => {
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           return res.arrayBuffer();
         })
         .then(async (buffer) => {
+          if (!isMounted) return;
           setLoading(false);
           // Wait for DOM container to be attached
-          setTimeout(async () => {
-            if (docxContainerRef.current) {
-              docxContainerRef.current.innerHTML = '';
-              await docx.renderAsync(buffer, docxContainerRef.current, undefined, {
-                className: 'docx-document',
-                inWrapper: true,
-                ignoreWidth: false,
-                ignoreHeight: false,
-              });
-            }
+          timer = window.setTimeout(async () => {
+            if (!isMounted || !docxContainerRef.current) return;
+            docxContainerRef.current.innerHTML = '';
+            const isNarrowScreen = typeof window !== 'undefined' && window.innerWidth < 768;
+            await docx.renderAsync(buffer, docxContainerRef.current, undefined, {
+              className: 'docx-document',
+              inWrapper: true,
+              ignoreWidth: isNarrowScreen,
+              ignoreHeight: false,
+            });
           }, 50);
         })
         .catch((err) => {
+          if (!isMounted) return;
           setError(`Unable to render Word document: ${err.message}`);
           setLoading(false);
         });
-      return;
+      return () => {
+        isMounted = false;
+        if (timer) clearTimeout(timer);
+      };
     }
 
-    // 5. PowerPoint Presentations (.pptx, .ppsx) - Direct Wasm Presentation Viewer
+    // 5. PowerPoint Presentations (.pptx, .ppsx) - Direct Wasm Presentation Viewer (MED-5: Async mount safety)
     if (ext === 'pptx' || ext === 'ppsx') {
+      let isMounted = true;
       fetch(targetUrl)
         .then((res) => {
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           return res.arrayBuffer();
         })
         .then((buffer) => {
+          if (!isMounted) return;
           setPptxBuffer(buffer);
           setLoading(false);
         })
         .catch((err) => {
+          if (!isMounted) return;
           setError(`Unable to load presentation: ${err.message}`);
           setLoading(false);
         });
-      return;
+      return () => {
+        isMounted = false;
+      };
     }
 
     // Default fallback
@@ -544,6 +712,8 @@ export function FilePreviewModal({
   // Listen for messages from the PDF viewer iframe (Close, Download, Force Reload)
   useEffect(() => {
     const handleIframeMessage = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin && e.origin !== 'null') return;
+      if (pdfIframeRef.current && e.source !== pdfIframeRef.current.contentWindow) return;
       if (!e.data || typeof e.data !== 'object') return;
       if (e.data.action === 'closePreview') {
         onClose();
@@ -645,7 +815,7 @@ export function FilePreviewModal({
           try {
             pdfIframeRef.current?.contentWindow?.focus();
             pdfIframeRef.current?.focus();
-          } catch (err) {}
+          } catch {}
         }
         return;
       }
@@ -708,6 +878,9 @@ export function FilePreviewModal({
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Document preview: ${file.name}`}
       className="fixed inset-0 z-50 bg-[#141414] flex flex-col w-screen h-screen select-none overflow-hidden animate-in fade-in duration-100"
       onClick={onClose}
     >
@@ -715,9 +888,9 @@ export function FilePreviewModal({
         className="bg-[#121214] flex flex-col w-full h-full overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top Header Bar for non-PDF files (DOCX, PPTX, Images) */}
+        {/* Top Header Bar for non-PDF files (DOCX, PPTX, Images: with iOS safe-area insets: Issue 9) */}
         {ext !== 'pdf' && (
-          <div className="bg-[#141417] border-b border-[#222226] px-3 sm:px-4 py-2 flex items-center justify-between gap-2.5 shrink-0">
+          <div className="bg-[#141417] border-b border-[#222226] px-3 sm:px-4 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] pb-2 pl-[calc(0.75rem+env(safe-area-inset-left,0px))] pr-[calc(0.75rem+env(safe-area-inset-right,0px))] flex items-center justify-between gap-2.5 shrink-0">
             <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
               <span
                 className={`text-[10px] font-mono font-bold px-2 py-0.5 border rounded uppercase shrink-0 ${
@@ -735,27 +908,35 @@ export function FilePreviewModal({
               <span className="font-medium text-xs sm:text-sm text-zinc-200 truncate tracking-tight min-w-0" title={file.name}>{file.name}</span>
               <span className="text-[11px] font-mono text-zinc-500 shrink-0 hidden xs:inline">({file.size})</span>
 
-              {/* Photo Gallery Counter & Quick Arrows */}
-              {hasImageGallery && (
-                <div className="hidden sm:flex items-center gap-1.5 ml-2 shrink-0">
-                  <span className="text-[11px] font-mono font-medium bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded border border-zinc-700">
-                    {currentImageIndex + 1} / {imageFiles.length}
+              {/* Document / Gallery File Cycle Navigation (Issue 7: Mobile & Desktop Touch Chevron Buttons) */}
+              {folderFiles && folderFiles.length > 1 && (
+                <div className="flex items-center gap-1 sm:gap-1.5 ml-1 sm:ml-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={handlePrevFolderFile}
+                    disabled={!hasPrevFolderFile}
+                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg border border-white/10 bg-white/[0.06] hover:bg-white/[0.12] text-zinc-200 disabled:opacity-20 disabled:pointer-events-none flex items-center justify-center transition-all cursor-pointer active:scale-95 touch-manipulation"
+                    title="Previous File (Ctrl+Left Arrow)"
+                    aria-label="Previous file"
+                  >
+                    <svg className="w-3.5 h-3.5 stroke-[2.5]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                  </button>
+                  <span className="text-[11px] font-mono font-medium text-zinc-300 bg-white/[0.04] px-1.5 sm:px-2 py-0.5 rounded border border-white/10 whitespace-nowrap">
+                    {currentFolderIndex + 1} / {folderFiles.length}
                   </span>
                   <button
-                    onClick={handlePrev}
-                    disabled={!hasPrev}
-                    className="w-6 h-6 rounded border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-xs"
-                    title="Previous Photo (Left Arrow Key)"
+                    type="button"
+                    onClick={handleNextFolderFile}
+                    disabled={!hasNextFolderFile}
+                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg border border-white/10 bg-white/[0.06] hover:bg-white/[0.12] text-zinc-200 disabled:opacity-20 disabled:pointer-events-none flex items-center justify-center transition-all cursor-pointer active:scale-95 touch-manipulation"
+                    title="Next File (Ctrl+Right Arrow)"
+                    aria-label="Next file"
                   >
-                    ←
-                  </button>
-                  <button
-                    onClick={handleNext}
-                    disabled={!hasNext}
-                    className="w-6 h-6 rounded border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-xs"
-                    title="Next Photo (Right Arrow Key)"
-                  >
-                    →
+                    <svg className="w-3.5 h-3.5 stroke-[2.5]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
                   </button>
                 </div>
               )}
@@ -778,11 +959,13 @@ export function FilePreviewModal({
                 Download
               </button>
               <button
+                type="button"
                 onClick={onClose}
+                aria-label="Close preview"
                 className="w-8 h-8 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.1] border border-transparent hover:border-white/10 flex items-center justify-center text-base transition-all cursor-pointer"
                 title="Close Preview (Esc)"
               >
-                ✕
+                <span aria-hidden="true">✕</span>
               </button>
             </div>
           </div>
@@ -920,9 +1103,9 @@ export function FilePreviewModal({
                       try {
                         pdfIframeRef.current?.contentWindow?.focus();
                         pdfIframeRef.current?.focus();
-                      } catch (e) {}
+                      } catch {}
                     }}
-                    src={`/pdfjs/web/viewer.html?file=${encodeURIComponent(pdfSourceUrl || `${VAULT_STREAM_HOST}${file.url}`)}&title=${encodeURIComponent(file.name)}&size=${encodeURIComponent(file.size || '')}#zoom=page-fit`}
+                    src={`/pdfjs/web/viewer.html?file=${encodeURIComponent(pdfSourceUrl || `${VAULT_STREAM_HOST}${file.url}`)}&title=${encodeURIComponent(file.name)}&size=${encodeURIComponent(file.size || '')}&folderIndex=${currentFolderIndex + 1}&folderTotal=${folderFiles?.length || 1}#zoom=page-fit`}
                     className="w-full h-full border-none bg-[#0A0A0C] block"
                     title={file.name}
                   />
@@ -965,24 +1148,33 @@ export function FilePreviewModal({
                   {/* Zoom Controls Bar */}
                   <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-20 flex items-center gap-1 sm:gap-2 bg-white/95 backdrop-blur border-2 border-[#141414] rounded-xl px-1.5 sm:px-2 py-0.5 sm:py-1 shadow-[2px_2px_0px_#141414]">
                     <button
+                      type="button"
                       onClick={() => setImageZoom((z) => Math.max(0.5, z - 0.25))}
-                      className="px-2 py-0.5 text-xs font-bold font-mono hover:bg-neutral-100 rounded"
+                      className="px-2 py-0.5 text-xs font-bold font-mono hover:bg-neutral-100 rounded cursor-pointer"
                       title="Zoom Out (-)"
+                      aria-label="Zoom Out"
                     >
                       -
                     </button>
-                    <span className="text-xs font-mono font-bold px-1">{Math.round(imageZoom * 100)}%</span>
+                    <span className="text-xs font-mono font-bold px-1" aria-live="polite">{Math.round(imageZoom * 100)}%</span>
                     <button
+                      type="button"
                       onClick={() => setImageZoom((z) => Math.min(3, z + 0.25))}
-                      className="px-2 py-0.5 text-xs font-bold font-mono hover:bg-neutral-100 rounded"
+                      className="px-2 py-0.5 text-xs font-bold font-mono hover:bg-neutral-100 rounded cursor-pointer"
                       title="Zoom In (+)"
+                      aria-label="Zoom In"
                     >
                       +
                     </button>
                     <button
-                      onClick={() => setImageZoom(1)}
-                      className="px-2 py-0.5 text-[10px] font-bold font-mono hover:bg-neutral-100 rounded border-l border-neutral-300 ml-1"
+                      type="button"
+                      onClick={() => {
+                        setImageZoom(1);
+                        setPanPosition({ x: 0, y: 0 });
+                      }}
+                      className="px-2 py-0.5 text-[10px] font-bold font-mono hover:bg-neutral-100 rounded border-l border-neutral-300 ml-1 cursor-pointer"
                       title="Reset Zoom (0)"
+                      aria-label="Reset Zoom"
                     >
                       Reset
                     </button>
@@ -1008,21 +1200,53 @@ export function FilePreviewModal({
                     </>
                   )}
 
-                  <div className="w-full h-full flex items-center justify-center overflow-auto p-4">
+                  <div
+                    className="w-full h-full flex items-center justify-center overflow-hidden p-4 select-none relative touch-none"
+                    onPointerDown={handlePointerDown}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                    onPointerCancel={handlePointerUp}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    onClick={(e) => {
+                      if (e.target === e.currentTarget && imageZoom <= 1 && !isDragging) {
+                        onClose();
+                      }
+                    }}
+                  >
                     <img
                       src={blobUrl}
                       alt={file.name}
-                      style={{ transform: `scale(${imageZoom})`, transformOrigin: 'center' }}
-                      className="max-w-full max-h-full object-contain rounded-lg border-2 border-[#141414] shadow-[4px_4px_0px_#141414] transition-transform duration-150"
+                      draggable={false}
+                      style={{
+                        transform: `translate3d(${panPosition.x}px, ${panPosition.y}px, 0) scale(${imageZoom})`,
+                        transformOrigin: 'center',
+                        cursor: imageZoom > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
+                        transition: isDragging ? 'none' : 'transform 0.15s ease-out',
+                      }}
+                      className="max-w-full max-h-full object-contain rounded-lg border-2 border-[#141414] shadow-[4px_4px_0px_#141414] select-none pointer-events-auto"
                     />
                   </div>
                 </div>
               )}
 
-              {/* 3. MARKDOWN & CODE VIEWER */}
+              {/* 3. MARKDOWN & CODE VIEWER (Issue 15: Backdrop Click Dismissal) */}
               {(ext === 'md' || ext === 'txt' || ext === 'py' || ext === 'json') && markdownHtml && (
-                <div className="w-full h-full overflow-y-auto bg-neutral-200/90 p-2.5 sm:p-8">
-                  <div className="bg-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-xl max-w-4xl w-full mx-auto p-4 sm:p-10 md:p-14 border-2 border-[#141414] my-2 sm:my-4">
+                <div
+                  className="w-full h-full overflow-y-auto bg-neutral-200/90 p-2.5 sm:p-8 cursor-pointer"
+                  onClick={(e) => {
+                    if (e.target === e.currentTarget) onClose();
+                  }}
+                >
+                  <div
+                    className="bg-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-xl max-w-4xl w-full mx-auto p-4 sm:p-10 md:p-14 border-2 border-[#141414] my-2 sm:my-4 cursor-default"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <div
                       className="slate-markdown-body"
                       dangerouslySetInnerHTML={{ __html: markdownHtml }}
@@ -1031,12 +1255,18 @@ export function FilePreviewModal({
                 </div>
               )}
 
-              {/* 4. WORD DOCUMENT (.docx) VIEWER */}
+              {/* 4. WORD DOCUMENT (.docx) VIEWER (Issue 15 & Issue 24: Responsive horizontal flow & backdrop dismissal) */}
               {ext === 'docx' && (
-                <div className="w-full h-full overflow-y-auto bg-neutral-200/90 p-2.5 sm:p-8">
+                <div
+                  className="w-full h-full overflow-auto bg-neutral-200/90 p-1.5 sm:p-8 cursor-pointer flex justify-center"
+                  onClick={(e) => {
+                    if (e.target === e.currentTarget) onClose();
+                  }}
+                >
                   <div
                     ref={docxContainerRef}
-                    className="bg-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-xl max-w-4xl w-full mx-auto p-3.5 sm:p-6 md:p-10 border-2 border-[#141414] my-2 sm:my-4"
+                    className="bg-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-xl max-w-4xl w-full p-2.5 sm:p-6 md:p-10 border-2 border-[#141414] my-2 sm:my-4 cursor-default overflow-x-auto"
+                    onClick={(e) => e.stopPropagation()}
                   />
                 </div>
               )}

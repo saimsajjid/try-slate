@@ -317,7 +317,7 @@ export async function deletePdfFromDisk(url: string): Promise<boolean> {
     try {
       const cache = await caches.open(CACHE_NAME);
       deleted = await cache.delete(url, { ignoreSearch: true });
-    } catch (e) {}
+    } catch {}
   }
 
   if (typeof window !== 'undefined' && 'indexedDB' in window) {
@@ -333,7 +333,7 @@ export async function deletePdfFromDisk(url: string): Promise<boolean> {
         };
         req.onerror = () => resolve();
       });
-    } catch (e) {}
+    } catch {}
   }
 
   return deleted;
@@ -363,7 +363,7 @@ export async function getDiskStorageStats(): Promise<{
           if (len) totalBytes += parseInt(len, 10);
         }
       }
-    } catch (e) {}
+    } catch {}
   }
 
   const mb = totalBytes / (1024 * 1024);
@@ -379,7 +379,7 @@ export async function clearAllDiskCache(): Promise<void> {
   if (typeof window !== 'undefined' && 'caches' in window) {
     try {
       await caches.delete(CACHE_NAME);
-    } catch (e) {}
+    } catch {}
   }
 
   if (typeof window !== 'undefined' && 'indexedDB' in window) {
@@ -387,6 +387,6 @@ export async function clearAllDiskCache(): Promise<void> {
       const db = await openIndexedDb();
       const tx = db.transaction(IDB_STORE, 'readwrite');
       tx.objectStore(IDB_STORE).clear();
-    } catch (e) {}
+    } catch {}
   }
 }

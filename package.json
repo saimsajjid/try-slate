@@ -12,8 +12,10 @@
   "dependencies": {
     "@extend-ai/react-pptx": "^0.2.2",
     "@tailwindcss/vite": "^4.3.3",
+    "@types/dompurify": "^3.0.5",
     "chart.js": "^4.6.1",
     "docx-preview": "^0.4.1",
+    "dompurify": "^3.4.17",
     "jszip": "^3.10.2",
     "lucide-react": "^1.61.0",
     "marked": "^18.1.1",

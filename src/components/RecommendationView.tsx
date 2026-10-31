@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface RecommendationViewProps {
   courseCode?: string;
@@ -6,11 +6,25 @@ interface RecommendationViewProps {
 
 export function RecommendationView(_props: RecommendationViewProps) {
   const [copied, setCopied] = useState(false);
+  const copyTimerRef = useRef<number | null>(null);
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText('https://www.youtube.com/watch?v=LAK-VFr9rFc');
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    };
+  }, []);
+
+  const handleCopyLink = async () => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText('https://www.youtube.com/watch?v=LAK-VFr9rFc');
+        setCopied(true);
+        if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+        copyTimerRef.current = window.setTimeout(() => setCopied(false), 2000);
+      }
+    } catch (e) {
+      console.warn('Clipboard write failed:', e);
+    }
   };
 
   return (
@@ -133,7 +147,7 @@ export function RecommendationView(_props: RecommendationViewProps) {
           href="https://www.youtube.com/watch?v=LAK-VFr9rFc"
           target="_blank"
           rel="noopener noreferrer"
-          className="px-4 py-3 rounded-xl text-xs sm:text-sm font-bold bg-[#FF0000] text-white border-2 border-[#141414] shadow-[2.5px_2.5px_0px_#141414] hover:shadow-[3.5px_3.5px_0px_#141414] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all flex items-center justify-center gap-2"
+          className="px-4 py-3 rounded-xl text-xs sm:text-sm font-bold bg-[#FF0000] text-white border-2 border-[#141414] shadow-[2.5px_2.5px_0px_#141414] sm:hover:shadow-[3.5px_3.5px_0px_#141414] sm:hover:-translate-y-0.5 active:scale-95 touch-manipulation transition-all flex items-center justify-center gap-2"
         >
           <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white shrink-0">
             <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
@@ -149,7 +163,7 @@ export function RecommendationView(_props: RecommendationViewProps) {
           href="https://px.pixxo.io/test/NotesCppYT/CompleteCppNotes.html"
           target="_blank"
           rel="noopener noreferrer"
-          className="px-4 py-3 rounded-xl text-xs sm:text-sm font-bold bg-[#F0FDF4] text-[#141414] border-2 border-[#141414] shadow-[2.5px_2.5px_0px_#141414] hover:bg-[#DCFCE7] hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all flex items-center justify-center gap-2"
+          className="px-4 py-3 rounded-xl text-xs sm:text-sm font-bold bg-[#F0FDF4] text-[#141414] border-2 border-[#141414] shadow-[2.5px_2.5px_0px_#141414] hover:bg-[#DCFCE7] sm:hover:-translate-y-0.5 active:scale-95 touch-manipulation transition-all flex items-center justify-center gap-2"
         >
           <svg viewBox="0 0 24 24" className="w-4 h-4 stroke-[#141414] fill-none shrink-0" strokeWidth="2">
             <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
@@ -168,7 +182,7 @@ export function RecommendationView(_props: RecommendationViewProps) {
           href="https://app.notion.com/p/Complete-C-YT-Course-Syllabus-300bfef683f38078b73bf0fb54410b82"
           target="_blank"
           rel="noopener noreferrer"
-          className="px-4 py-3 rounded-xl text-xs sm:text-sm font-bold bg-white text-[#141414] border-2 border-[#141414] shadow-[2.5px_2.5px_0px_#141414] hover:bg-neutral-100 hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all flex items-center justify-center gap-2"
+          className="px-4 py-3 rounded-xl text-xs sm:text-sm font-bold bg-white text-[#141414] border-2 border-[#141414] shadow-[2.5px_2.5px_0px_#141414] hover:bg-neutral-100 sm:hover:-translate-y-0.5 active:scale-95 touch-manipulation transition-all flex items-center justify-center gap-2"
         >
           <svg viewBox="0 0 24 24" className="w-4 h-4 stroke-[#141414] fill-none shrink-0" strokeWidth="2">
             <path d="M4 4h16v16H4z" />
@@ -185,7 +199,7 @@ export function RecommendationView(_props: RecommendationViewProps) {
 
         <button
           onClick={handleCopyLink}
-          className="px-4 py-3 rounded-xl text-xs sm:text-sm font-bold bg-white text-[#141414] border-2 border-[#141414] shadow-[2.5px_2.5px_0px_#141414] hover:bg-neutral-100 hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none transition-all flex items-center justify-center gap-2"
+          className="px-4 py-3 rounded-xl text-xs sm:text-sm font-bold bg-white text-[#141414] border-2 border-[#141414] shadow-[2.5px_2.5px_0px_#141414] hover:bg-neutral-100 sm:hover:-translate-y-0.5 active:scale-95 touch-manipulation transition-all flex items-center justify-center gap-2"
         >
           {copied ? (
             <>

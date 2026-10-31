@@ -465,7 +465,6 @@ textarea,
 #currentOutlineItem,
 #hiddenPdfEngineElements,
 #viewFindButton,
-#findbar,
 .toolbarButtonWithContainer:has(#viewFindButton) {
   display: none !important;
 }
@@ -538,11 +537,34 @@ textarea,
   border: 1px solid rgba(255, 255, 255, 0.07) !important;
 }
 
-/* 9. Find Bar & Search (Hidden) */
+/* 9. Find Bar & Search */
 #viewFindButton,
-#findbar,
 .toolbarButtonWithContainer:has(#viewFindButton) {
   display: none !important;
+}
+
+#findbar {
+  top: 48px !important;
+  left: 64px !important;
+  background-color: #141417 !important;
+  border: 1px solid #27272A !important;
+  border-radius: 10px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+  padding: 6px 10px !important;
+  z-index: 1000 !important;
+}
+
+#findbar .toolbarField {
+  background-color: #1A1A1E !important;
+  border: 1px solid #333338 !important;
+  color: #F4F4F5 !important;
+  border-radius: 6px !important;
+  padding: 4px 8px !important;
+}
+
+#findbar .toolbarButton {
+  border-radius: 6px !important;
+  color: #F4F4F5 !important;
 }
 
 /* 10. Progress Bar */
@@ -1102,7 +1124,7 @@ textarea,
 
 @media (max-width: 480px) {
   .docTitleText {
-    max-width: 70px !important;
+    max-width: 90px !important;
   }
 
   #customScaleDropdown {
@@ -1152,7 +1174,7 @@ textarea,
 
 .sidebarTitleIcon {
   color: #F59E0B !important;
-  shrink: 0 !important;
+  flex-shrink: 0 !important;
 }
 
 .sidebarTitleText {
@@ -1212,5 +1234,84 @@ textarea,
     display: inline-flex !important;
     width: 28px !important;
     height: 28px !important;
+  }
+}
+
+
+/* ==========================================================================
+   BATCH 2: NEXT/PREV FILE NAVIGATION & ERGONOMICS (Issues 7, 9, 10)
+   ========================================================================== */
+
+/* Safe-area insets for iOS notches and dynamic islands (Issue 9) */
+#toolbarContainer {
+  padding-top: env(safe-area-inset-top, 0px) !important;
+  padding-left: env(safe-area-inset-left, 0px) !important;
+  padding-right: env(safe-area-inset-right, 0px) !important;
+}
+
+/* File Cycle Navigation Bar (Issue 7) */
+.fileCycleNavGroup {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  margin-left: 6px !important;
+  vertical-align: middle !important;
+}
+
+.fileNavBtn {
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 6px !important;
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #D4D4D8 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  padding: 0 !important;
+  touch-action: manipulation !important;
+}
+
+.fileNavBtn:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  color: #FFFFFF !important;
+}
+
+.fileNavBtn:active:not(:disabled) {
+  transform: scale(0.95) !important;
+}
+
+.fileNavBtn:disabled {
+  opacity: 0.2 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+.fileCounterText {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  color: #A1A1AA !important;
+  padding: 2px 6px !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 4px !important;
+  white-space: nowrap !important;
+}
+
+/* iOS Safari auto-zoom prevention: inputs must be >= 16px on mobile (Issue 10) */
+@media (max-width: 768px) {
+  #pageNumber,
+  #findInput,
+  .toolbarField {
+    font-size: 16px !important;
+  }
+
+  .fileNavBtn {
+    width: 30px !important;
+    height: 30px !important;
   }
 }

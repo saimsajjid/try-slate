@@ -93,13 +93,22 @@ See https://github.com/adobe-type-tools/cmap-resources
                   <span class="docTypeBadge">PDF</span>
                   <span id="docTitle" class="docTitleText" title="Document">Document</span>
                   <span id="docSize" class="docSizeText"></span>
+                  <div id="fileCycleNav" class="fileCycleNavGroup" style="display: none;">
+                    <button id="prevFileBtn" class="fileNavBtn" type="button" title="Previous File (Ctrl+Left Arrow)" aria-label="Previous file">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                    </button>
+                    <span id="fileCounterText" class="fileCounterText">1/1</span>
+                    <button id="nextFileBtn" class="fileNavBtn" type="button" title="Next File (Ctrl+Right Arrow)" aria-label="Next file">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
+                  </div>
                 </div>
                 <div class="toolbarButtonSpacer"></div>
                 <div class="toolbarButtonWithContainer" id="viewFindButtonContainer" style="display: none !important;">
                   <button id="viewFindButton" class="toolbarButton" type="button" title="Find in Document" tabindex="0" data-l10n-id="pdfjs-findbar-button" aria-expanded="false" aria-controls="findbar" style="display: none !important;">
                     <span data-l10n-id="pdfjs-findbar-button-label">Find</span>
                   </button>
-                  <div class="hidden doorHanger toolbarHorizontalGroup" id="findbar" style="display: none !important;">
+                  <div class="hidden doorHanger toolbarHorizontalGroup" id="findbar">
                     <div id="findInputContainer" class="toolbarHorizontalGroup">
                       <span class="loadingInput end toolbarHorizontalGroup">
                         <input id="findInput" class="toolbarField" title="Find" placeholder="Find in document…" tabindex="0" data-l10n-id="pdfjs-find-input" aria-invalid="false">
@@ -798,6 +807,31 @@ See https://github.com/adobe-type-tools/cmap-resources
               if (initStatus) initStatus.textContent = 'Downloading ' + size + '...';
             }
           }
+
+          // Cycle file navigation controls (Issue 7)
+          const folderIndex = parseInt(params.get('folderIndex') || '1', 10);
+          const folderTotal = parseInt(params.get('folderTotal') || '1', 10);
+          const cycleNav = document.getElementById('fileCycleNav');
+          const counterText = document.getElementById('fileCounterText');
+          const prevBtn = document.getElementById('prevFileBtn');
+          const nextBtn = document.getElementById('nextFileBtn');
+
+          if (cycleNav && counterText && folderTotal > 1) {
+            cycleNav.style.display = 'inline-flex';
+            counterText.textContent = folderIndex + ' / ' + folderTotal;
+            if (prevBtn) {
+              prevBtn.disabled = folderIndex <= 1;
+              prevBtn.onclick = function() {
+                window.parent.postMessage({ action: 'slateShortcutNav', level: 'file', direction: 'prev' }, '*');
+              };
+            }
+            if (nextBtn) {
+              nextBtn.disabled = folderIndex >= folderTotal;
+              nextBtn.onclick = function() {
+                window.parent.postMessage({ action: 'slateShortcutNav', level: 'file', direction: 'next' }, '*');
+              };
+            }
+          }
         } catch (e) {}
 
         // Slate Document Loading Overlay Controller
@@ -1036,7 +1070,15 @@ See https://github.com/adobe-type-tools/cmap-resources
           }
 
           realScaleSelect.addEventListener('change', updateCustomScaleUI);
-          setInterval(updateCustomScaleUI, 400);
+          if (window.PDFViewerApplication && window.PDFViewerApplication.eventBus) {
+            window.PDFViewerApplication.eventBus.on('scalechanging', updateCustomScaleUI);
+          } else {
+            document.addEventListener('webviewerloaded', function() {
+              if (window.PDFViewerApplication && window.PDFViewerApplication.eventBus) {
+                window.PDFViewerApplication.eventBus.on('scalechanging', updateCustomScaleUI);
+              }
+            });
+          }
 
           document.addEventListener('click', function(e) {
             if (!scaleBtn.contains(e.target) && !scaleMenu.contains(e.target)) {
@@ -1057,11 +1099,7 @@ See https://github.com/adobe-type-tools/cmap-resources
             }
             window.parent.postMessage({ action: 'closePreview' }, '*');
           }
-          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
-            e.preventDefault();
-            e.stopPropagation();
-            return;
-          }
+
 
           // Do NOT hijack keys when user is typing in an input field (e.g. page number, search input)
           const target = e.target;

@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { FilePreviewModal, type PreviewFile } from './components/FilePreviewModal';
 import { FolderIllustration } from './components/FolderIllustration';
 import { FileIllustration } from './components/FileIllustration';
 import { RecommendationView } from './components/RecommendationView';
-import { getPdfFromDisk, getTextFromDisk } from './services/academicCache';
+import { getPdfFromDisk, getTextFromDisk, savePdfToDisk, saveTextToDisk } from './services/academicCache';
 
 // Type definitions for Recursive JSON Tree
 interface FileItem {
@@ -1511,29 +1511,49 @@ function InteractiveSlateLogo({
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, [isCompanionActive]);
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleMascotClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsJumping(true);
-    onToggleCompanion();
-    onReset();
     setTimeout(() => setIsJumping(false), 450);
+
+    // Companion mode is strictly desktop only (>= 768px). On mobile viewports, companion is disabled.
+    if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+      onToggleCompanion();
+    } else {
+      onReset();
+    }
+  };
+
+  const handleWordmarkClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onReset();
   };
 
   return (
     <div
-      className="relative flex items-center gap-3 cursor-pointer select-none group"
+      className="relative flex items-center gap-3 select-none group"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      onClick={handleClick}
-      title={
-        isCompanionActive
-          ? 'Slate is currently following your cursor. Click to return home (or press Esc).'
-          : 'Click Slate to activate Cursor Companion mode!'
-      }
     >
       {/* Hand-drawn Slate Mascot Creature / Docking Station */}
       <div
         ref={mascotRef}
+        role="button"
+        tabIndex={0}
+        onClick={handleMascotClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleMascotClick(e as any);
+          }
+        }}
+        title={
+          typeof window !== 'undefined' && window.innerWidth >= 768
+            ? (isCompanionActive
+                ? 'Slate mascot is following cursor. Click mascot to return (or press Esc).'
+                : 'Click mascot to toggle Cursor Companion')
+            : 'Return to Home'
+        }
         className={`w-9 h-9 rounded-xl flex items-center justify-center relative shrink-0 transition-all duration-300 ${
           isCompanionActive
             ? 'bg-neutral-100 border-2 border-dashed border-[#141414] scale-95 shadow-none'
@@ -1607,9 +1627,21 @@ function InteractiveSlateLogo({
         )}
       </div>
 
-      <div className="flex items-baseline gap-2">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={handleWordmarkClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleWordmarkClick(e as any);
+          }
+        }}
+        className="flex items-baseline gap-2 cursor-pointer focus:outline-hidden"
+        title="Return to Home"
+      >
         <span
-          className="text-xl font-bold tracking-tight text-[#141414] group-hover:text-[#FF6D00] transition-colors"
+          className="text-xl font-bold tracking-tight text-[#141414] hover:text-[#FF6D00] transition-colors"
           style={{ fontFamily: '"Space Grotesk", sans-serif' }}
         >
           slate
@@ -1627,6 +1659,17 @@ function InteractiveSlateLogo({
 
 function SlateCursorCompanion({ onDismiss }: { onDismiss: () => void }) {
   const [isBlinking, setIsBlinking] = useState(false);
+
+  // Auto-dismiss companion if window is resized below desktop breakpoint (< 768px)
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        onDismiss();
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [onDismiss]);
   const mascotRef = useRef<HTMLDivElement>(null);
   const leftLegRef = useRef<HTMLSpanElement>(null);
   const rightLegRef = useRef<HTMLSpanElement>(null);
@@ -1798,18 +1841,13 @@ function SlateCursorCompanion({ onDismiss }: { onDismiss: () => void }) {
 
   return (
     <>
-      {/* Moving Mascot Follower (Sized strictly to 36x36px to prevent blocking clicks) */}
+      {/* Moving Mascot Follower (Desktop only; pointer-events-none so it NEVER blocks clicks) */}
       <div
         ref={mascotRef}
-        onClick={(e) => {
-          e.stopPropagation();
-          onDismiss();
-        }}
-        className="fixed top-0 left-0 w-9 h-9 z-50 pointer-events-auto cursor-pointer select-none group"
+        className="fixed top-0 left-0 w-9 h-9 z-50 pointer-events-none select-none group"
         style={{ willChange: 'transform' }}
-        title="Click Slate or press Esc to return home"
       >
-        <div className="w-9 h-9 bg-[#141414] rounded-xl flex items-center justify-center relative shadow-[3px_3px_0px_rgba(0,0,0,0.35)] transition-transform group-hover:scale-110 active:scale-95">
+        <div className="w-9 h-9 bg-[#141414] rounded-xl flex items-center justify-center relative shadow-[3px_3px_0px_rgba(0,0,0,0.35)]">
           {/* Pupil Eyes */}
           <div className="flex gap-1.5 items-center">
             <span
@@ -2265,6 +2303,164 @@ function EmptyFolderSlate({
   );
 }
 
+// ============================================================================
+// HASH & HISTORY ROUTING HELPERS (Issue 1: Back-Button & Direct Deep-Linking)
+// ============================================================================
+function buildHash(
+  course: CourseItem | null,
+  trail: FolderItem[],
+  file?: { name: string } | null
+): string {
+  if (!course) return '#/';
+  let hash = `#/course/${encodeURIComponent(course.code)}`;
+  if (trail && trail.length > 0) {
+    hash += '/' + trail.map((f) => encodeURIComponent(f.name)).join('/');
+  }
+  if (file && file.name) {
+    hash += `?file=${encodeURIComponent(file.name)}`;
+  }
+  return hash;
+}
+
+function findFileInCourse(
+  course: CourseItem,
+  fileName: string
+): { file: PreviewFile; trail: FolderItem[]; filesList: PreviewFile[] } | null {
+  const targetLower = fileName.toLowerCase();
+  const isClean = (name: string) =>
+    !name.toLowerCase().includes('tracker') && !name.toLowerCase().includes('student');
+  const cleanList = (files?: FileItem[]): PreviewFile[] =>
+    (files || []).filter((f) => isClean(f.name)) as PreviewFile[];
+
+  const rootFiles = cleanList(course.files);
+  const rootMatch = rootFiles.find((f) => f.name.toLowerCase() === targetLower);
+  if (rootMatch) {
+    return { file: rootMatch, trail: [], filesList: rootFiles };
+  }
+
+  function searchFolder(
+    folder: FolderItem,
+    currentTrail: FolderItem[]
+  ): { file: PreviewFile; trail: FolderItem[]; filesList: PreviewFile[] } | null {
+    const nextTrail = [...currentTrail, folder];
+    const files = cleanList(folder.files);
+    const match = files.find((f) => f.name.toLowerCase() === targetLower);
+    if (match) {
+      return { file: match, trail: nextTrail, filesList: files };
+    }
+    if (folder.folders) {
+      for (const sub of folder.folders) {
+        const subResult = searchFolder(sub, nextTrail);
+        if (subResult) return subResult;
+      }
+    }
+    return null;
+  }
+
+  if (course.folders) {
+    for (const f of course.folders) {
+      const res = searchFolder(f, []);
+      if (res) return res;
+    }
+  }
+
+  return null;
+}
+
+function parseHash(
+  hashStr: string,
+  courses: CourseItem[]
+): {
+  course: CourseItem | null;
+  trail: FolderItem[];
+  file: PreviewFile | null;
+  filesList: PreviewFile[];
+} {
+  const result = {
+    course: null as CourseItem | null,
+    trail: [] as FolderItem[],
+    file: null as PreviewFile | null,
+    filesList: [] as PreviewFile[],
+  };
+
+  const clean = (hashStr || '').replace(/^#\/?/, '').trim();
+  if (!clean || !courses || courses.length === 0) {
+    return result;
+  }
+
+  const [pathPart, queryPart] = clean.split('?');
+  let targetFileName: string | null = null;
+  if (queryPart) {
+    const params = new URLSearchParams(queryPart);
+    targetFileName = params.get('file');
+  }
+
+  const safeDecode = (str: string) => {
+    try {
+      return decodeURIComponent(str);
+    } catch {
+      return str;
+    }
+  };
+  const segments = pathPart.split('/').filter(Boolean).map(safeDecode);
+  if (segments[0] === 'course' || segments[0] === 'courses') {
+    segments.shift();
+  }
+  if (segments.length === 0) {
+    return result;
+  }
+
+  const courseCode = segments[0].toLowerCase();
+  const course = courses.find(
+    (c) =>
+      c.code.toLowerCase() === courseCode ||
+      c.title.toLowerCase() === courseCode
+  );
+  if (!course) return result;
+  result.course = course;
+
+  const folderSegments = segments.slice(1);
+  let currentLevel = course.folders || [];
+  const trail: FolderItem[] = [];
+
+  for (const seg of folderSegments) {
+    const found = currentLevel.find(
+      (f) => f.name.toLowerCase() === seg.toLowerCase()
+    );
+    if (found) {
+      trail.push(found);
+      currentLevel = found.folders || [];
+    } else {
+      break;
+    }
+  }
+  result.trail = trail;
+
+  const isClean = (name: string) =>
+    !name.toLowerCase().includes('tracker') && !name.toLowerCase().includes('student');
+  const activeFolder = trail.length > 0 ? trail[trail.length - 1] : null;
+  const rawFiles = activeFolder ? (activeFolder.files || []) : (course.files || []);
+  result.filesList = rawFiles.filter((f) => isClean(f.name)) as PreviewFile[];
+
+  if (targetFileName) {
+    const directMatch = result.filesList.find(
+      (f) => f.name.toLowerCase() === targetFileName!.toLowerCase()
+    );
+    if (directMatch) {
+      result.file = directMatch;
+    } else {
+      const fallback = findFileInCourse(course, targetFileName);
+      if (fallback) {
+        result.file = fallback.file;
+        result.trail = fallback.trail;
+        result.filesList = fallback.filesList;
+      }
+    }
+  }
+
+  return result;
+}
+
 export default function App() {
   const [data, setData] = useState<SemesterData>(INITIAL_DATA);
   const [activeCourse, setActiveCourse] = useState<CourseItem | null>(null);
@@ -2273,10 +2469,165 @@ export default function App() {
   const [companionActive, setCompanionActive] = useState(false);
   const [previewFile, setPreviewFile] = useState<PreviewFile | null>(null);
   const [previewFilesList, setPreviewFilesList] = useState<PreviewFile[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const handleOpenPreview = (file: PreviewFile, filesList: PreviewFile[]) => {
+  // Helper to extract all files recursively from a course with their breadcrumb path
+  const getAllCourseFiles = useCallback((course: CourseItem) => {
+    const results: Array<{
+      file: FileItem;
+      course: CourseItem;
+      folderTrail: FolderItem[];
+      allFolderFiles: FileItem[];
+    }> = [];
+
+    const traverse = (folders: FolderItem[], currentTrail: FolderItem[]) => {
+      for (const folder of folders) {
+        const nextTrail = [...currentTrail, folder];
+        const folderFiles = (folder.files || []).filter((f) => !f.name.startsWith('.'));
+        for (const file of folderFiles) {
+          results.push({
+            file,
+            course,
+            folderTrail: nextTrail,
+            allFolderFiles: folderFiles,
+          });
+        }
+        if (folder.folders && folder.folders.length > 0) {
+          traverse(folder.folders, nextTrail);
+        }
+      }
+    };
+
+    if (course.files && course.files.length > 0) {
+      const topFiles = course.files.filter((f) => !f.name.startsWith('.'));
+      for (const file of topFiles) {
+        results.push({
+          file,
+          course,
+          folderTrail: [],
+          allFolderFiles: topFiles,
+        });
+      }
+    }
+
+    if (course.folders && course.folders.length > 0) {
+      traverse(course.folders, []);
+    }
+
+    return results;
+  }, []);
+
+  const handleOpenSearchResultFile = (result: {
+    file: FileItem;
+    course: CourseItem;
+    folderTrail: FolderItem[];
+    allFolderFiles: FileItem[];
+  }) => {
+    setActiveCourse(result.course);
+    setActiveFolderTrail(result.folderTrail);
+    handleOpenPreview(result.file, result.allFolderFiles, result.course, result.folderTrail);
+  };
+
+  // History sync refs
+  const isHandlingHistoryChangeRef = useRef(false);
+  const hasInternalPushRef = useRef(false);
+
+  const updateUrl = useCallback(
+    (
+      course: CourseItem | null,
+      trail: FolderItem[],
+      file?: { name: string } | null,
+      replace: boolean = false
+    ) => {
+      if (isHandlingHistoryChangeRef.current) return;
+      const newHash = buildHash(course, trail, file);
+      if (window.location.hash === newHash) return;
+      if (replace) {
+        window.history.replaceState(null, '', newHash);
+      } else {
+        window.history.pushState(null, '', newHash);
+      }
+    },
+    []
+  );
+
+  const syncStateFromHash = useCallback(() => {
+    if (!data || !data.courses || data.courses.length === 0) return;
+    const currentHash = window.location.hash;
+    const parsed = parseHash(currentHash, data.courses);
+
+    isHandlingHistoryChangeRef.current = true;
+    setActiveCourse(parsed.course);
+    setActiveFolderTrail(parsed.trail);
+    setPreviewFile(parsed.file);
+    if (parsed.filesList.length > 0) {
+      setPreviewFilesList(parsed.filesList);
+    }
+    setTimeout(() => {
+      isHandlingHistoryChangeRef.current = false;
+    }, 60);
+  }, [data]);
+
+  // Sync state on popstate (browser back/forward button, swipe-to-back)
+  useEffect(() => {
+    window.addEventListener('popstate', syncStateFromHash);
+    window.addEventListener('hashchange', syncStateFromHash);
+    return () => {
+      window.removeEventListener('popstate', syncStateFromHash);
+      window.removeEventListener('hashchange', syncStateFromHash);
+    };
+  }, [syncStateFromHash]);
+
+  // Sync on initial load when data arrives if a deep link hash exists
+  useEffect(() => {
+    if (data && data.courses && data.courses.length > 0) {
+      if (window.location.hash && window.location.hash !== '#' && window.location.hash !== '#/') {
+        syncStateFromHash();
+      }
+    }
+  }, [data, syncStateFromHash]);
+
+  // Mobile viewport safety: companion is strictly disabled on viewports < 768px
+  useEffect(() => {
+    const checkViewport = () => {
+      if (window.innerWidth < 768 && companionActive) {
+        setCompanionActive(false);
+      }
+    };
+    checkViewport();
+    window.addEventListener('resize', checkViewport);
+    return () => window.removeEventListener('resize', checkViewport);
+  }, [companionActive]);
+
+  const handleOpenPreview = (
+    file: PreviewFile,
+    filesList: PreviewFile[],
+    overrideCourse?: CourseItem | null,
+    overrideTrail?: FolderItem[]
+  ) => {
+    hasInternalPushRef.current = true;
     setPreviewFile(file);
     setPreviewFilesList(filesList);
+    updateUrl(
+      overrideCourse !== undefined ? overrideCourse : activeCourse,
+      overrideTrail !== undefined ? overrideTrail : activeFolderTrail,
+      file,
+      false
+    );
+  };
+
+  const handleClosePreview = () => {
+    setPreviewFile(null);
+    setPreviewFilesList([]);
+    if (window.location.hash.includes('?file=')) {
+      if (hasInternalPushRef.current) {
+        hasInternalPushRef.current = false;
+        window.history.back();
+      } else {
+        updateUrl(activeCourse, activeFolderTrail, null, true);
+      }
+    }
   };
 
   // Dynamic Live Clock & Weekday System
@@ -2333,6 +2684,7 @@ export default function App() {
     const host = import.meta.env.PROD ? 'https://api.tryaudrio.app' : '';
     const fullUrl = file.url.startsWith('http') ? file.url : `${host}${file.url}`;
 
+    // 1. Check local on-disk cache first
     try {
       const cachedPdf = await getPdfFromDisk(fullUrl);
       if (cachedPdf) {
@@ -2361,8 +2713,62 @@ export default function App() {
         setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
         return;
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn('Cache check before download failed:', e);
+    }
 
+    // 2. Fetch from network, prime the persistent offline cache, and trigger download
+    try {
+      const response = await fetch(fullUrl);
+      if (response.ok) {
+        const isPdf = file.name.toLowerCase().endsWith('.pdf') || fullUrl.toLowerCase().endsWith('.pdf');
+        const isText = /\.(md|txt|py|js|ts|json|c|cpp|h|html|css)$/i.test(file.name);
+
+        if (isPdf) {
+          const buffer = await response.arrayBuffer();
+          // Write to persistent disk cache asynchronously so student can read offline later
+          savePdfToDisk(fullUrl, buffer).catch((err) => console.warn('Vault cache error:', err));
+          const blob = new Blob([buffer], { type: 'application/pdf' });
+          const blobUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = file.name;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+          return;
+        } else if (isText) {
+          const text = await response.text();
+          saveTextToDisk(fullUrl, text).catch((err) => console.warn('Vault cache error:', err));
+          const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+          const blobUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = file.name;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+          return;
+        } else {
+          const blob = await response.blob();
+          const blobUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = file.name;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+          return;
+        }
+      }
+    } catch (fetchErr) {
+      console.warn('Network fetch before download failed, falling back to direct anchor:', fetchErr);
+    }
+
+    // 3. Direct anchor fallback
     const a = document.createElement('a');
     a.href = fullUrl;
     a.download = file.name;
@@ -2386,6 +2792,34 @@ export default function App() {
     const rootFiles = (course.files || []).length;
     return rootFiles + course.folders.reduce((acc, f) => acc + countFiles(f), 0);
   };
+
+  // Search memoized lists
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+
+  const matchingCourses = useMemo(() => {
+    if (!normalizedQuery) return [];
+    return data.courses.filter(
+      (c) =>
+        c.title.toLowerCase().includes(normalizedQuery) ||
+        c.code.toLowerCase().includes(normalizedQuery) ||
+        c.instructor.toLowerCase().includes(normalizedQuery)
+    );
+  }, [data.courses, normalizedQuery]);
+
+  const allAcademicFiles = useMemo(() => {
+    return data.courses.flatMap((c) => getAllCourseFiles(c));
+  }, [data.courses, getAllCourseFiles]);
+
+  const matchingFiles = useMemo(() => {
+    if (!normalizedQuery) return [];
+    return allAcademicFiles.filter(
+      (item) =>
+        item.file.name.toLowerCase().includes(normalizedQuery) ||
+        item.file.type.toLowerCase().includes(normalizedQuery) ||
+        item.folderTrail.some((f) => f.name.toLowerCase().includes(normalizedQuery))
+    );
+  }, [allAcademicFiles, normalizedQuery]);
+
 
   // Timetable Live Calculations
   const isSelectedDayToday = selectedDay === liveTodayKey;
@@ -2427,11 +2861,10 @@ export default function App() {
       const liveIdx = weekdays.indexOf(liveTodayKey);
       const selIdx = weekdays.indexOf(selectedDay);
 
+      // On non-today days or weekends, lectures are strictly completed (if past weekday) or upcoming.
+      // Never tag as 'next' or trigger active pulse indicators on future days or weekends.
       if (liveIdx !== -1 && selIdx !== -1 && selIdx < liveIdx) {
         dynamicStatus = 'completed';
-      } else if (!nextSlotFound) {
-        dynamicStatus = 'next';
-        nextSlotFound = true;
       } else {
         dynamicStatus = 'upcoming';
       }
@@ -2480,6 +2913,26 @@ export default function App() {
     if (hrs > 0) return `${hrs} hr${hrs > 1 ? 's' : ''}`;
     return `${mins} min${mins > 1 ? 's' : ''}`;
   };
+
+  // Find if any class is actively live right now (Issue 6: Live Lecture Radar)
+  const currentLiveClass = (() => {
+    if (!data.timetable) return null;
+    const daySequence = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
+    const todayKey = daySequence[currentDayIndex];
+    const todaySlots = data.timetable[todayKey] || [];
+
+    for (const rawSlot of todaySlots) {
+      const { start, end, startStr, endStr } = parseSlotMinutes(rawSlot.time);
+      if (currentMinutes >= start && currentMinutes < end) {
+        return {
+          slot: { ...rawSlot, startStr, endStr },
+          dayKey: todayKey,
+          remainingMinutes: end - currentMinutes,
+        };
+      }
+    }
+    return null;
+  })();
 
   // Find the exact next chronological class across the weekly timetable
   const nextUpcomingClass = (() => {
@@ -2558,23 +3011,35 @@ export default function App() {
     });
   });
 
-  // Drill-down navigation helpers
+  // Drill-down navigation helpers with History synchronization (Issue 1)
   const handleOpenCourse = (course: CourseItem) => {
     setActiveCourse(course);
     setActiveFolderTrail([]);
+    setPreviewFile(null);
+    updateUrl(course, [], null, false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleOpenFolder = (folder: FolderItem) => {
-    setActiveFolderTrail((prev) => [...prev, folder]);
+    const nextTrail = [...activeFolderTrail, folder];
+    setActiveFolderTrail(nextTrail);
+    updateUrl(activeCourse, nextTrail, null, false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleBack = () => {
+    if (previewFile) {
+      handleClosePreview();
+      return;
+    }
     if (activeFolderTrail.length > 0) {
-      setActiveFolderTrail((prev) => prev.slice(0, prev.length - 1));
+      const nextTrail = activeFolderTrail.slice(0, activeFolderTrail.length - 1);
+      setActiveFolderTrail(nextTrail);
+      updateUrl(activeCourse, nextTrail, null, false);
     } else {
       setActiveCourse(null);
+      setActiveFolderTrail([]);
+      updateUrl(null, [], null, false);
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -2784,6 +3249,7 @@ export default function App() {
       : [targetEntry.file];
     setPreviewFilesList(targetFolderFiles);
     setPreviewFile(targetEntry.file);
+    updateUrl(activeCourse, targetEntry.trail, targetEntry.file, true);
     triggerToast(
       targetEntry.totalFilesInFolder > 1
         ? `${targetEntry.displayName} • ${targetEntry.file.name} (${targetEntry.fileIndex + 1}/${targetEntry.totalFilesInFolder})`
@@ -2838,8 +3304,10 @@ export default function App() {
     if (previewFile) {
       setPreviewFilesList(targetSection.files);
       setPreviewFile(targetSection.files[0]);
+      updateUrl(activeCourse, targetSection.trail, targetSection.files[0], true);
       triggerToast(`${targetSection.displayName} • ${targetSection.files[0].name}`);
     } else {
+      updateUrl(activeCourse, targetSection.trail, null, true);
       triggerToast(`${targetSection.displayName}`);
     }
   };
@@ -2877,6 +3345,7 @@ export default function App() {
       setActiveFolderTrail([]);
       setPreviewFile(null);
       setPreviewFilesList([]);
+      updateUrl(targetCourse, [], null, true);
       triggerToast(`${targetCourse.code}: ${targetCourse.title}`);
       return;
     }
@@ -2891,6 +3360,7 @@ export default function App() {
         : [targetEntry.file];
       setPreviewFilesList(targetFolderFiles);
       setPreviewFile(targetEntry.file);
+      updateUrl(targetCourse, targetEntry.trail, targetEntry.file, true);
       triggerToast(
         targetEntry.totalFilesInFolder > 1
           ? `${targetCourse.code} • ${targetEntry.displayName} • ${targetEntry.file.name} (${targetEntry.fileIndex + 1}/${targetEntry.totalFilesInFolder})`
@@ -2907,8 +3377,10 @@ export default function App() {
       if (previewFile) {
         setPreviewFilesList(targetSection.files);
         setPreviewFile(targetSection.files[0]);
+        updateUrl(targetCourse, targetSection.trail, targetSection.files[0], true);
         triggerToast(`${targetCourse.code} • ${targetSection.displayName} • ${targetSection.files[0].name}`);
       } else {
+        updateUrl(targetCourse, targetSection.trail, null, true);
         triggerToast(`${targetCourse.code} • ${targetSection.displayName}`);
       }
       return;
@@ -2930,6 +3402,7 @@ export default function App() {
       setActiveFolderTrail(matchedSection.trail);
       setPreviewFilesList(matchedSection.files);
       setPreviewFile(matchedSection.files[0]);
+      updateUrl(targetCourse, matchedSection.trail, matchedSection.files[0], true);
       triggerToast(
         `${targetCourse.code} • ${matchedSection.displayName} • ${matchedSection.files[0].name}`
       );
@@ -2942,11 +3415,13 @@ export default function App() {
         );
         if (found) {
           setActiveFolderTrail(found.trail);
+          updateUrl(targetCourse, found.trail, null, true);
           triggerToast(`${targetCourse.code} • ${found.displayName}`);
           return;
         }
       }
       setActiveFolderTrail([]);
+      updateUrl(targetCourse, [], null, true);
       triggerToast(`${targetCourse.code}: ${targetCourse.title}`);
     }
   };
@@ -2957,21 +3432,25 @@ export default function App() {
       ? activeFolderTrail[activeFolderTrail.length - 1]
       : null;
 
-  const visibleFolders = activeCourse
-    ? (currentFolder ? currentFolder.folders || [] : activeCourse.folders || []).filter(
-        (f) => currentFolder ? (countFiles(f) > 0 || (f.folders && f.folders.length > 0)) : true
-      )
-    : [];
+  const visibleFolders = useMemo(() => {
+    return activeCourse
+      ? (currentFolder ? currentFolder.folders || [] : activeCourse.folders || []).filter(
+          (f) => (currentFolder ? countFiles(f) > 0 || (f.folders && f.folders.length > 0) : true)
+        )
+      : [];
+  }, [activeCourse, currentFolder]);
 
-  const visibleFiles = activeCourse
-    ? (
-        (currentFolder ? currentFolder.files : activeCourse.files) || []
-      ).filter(
-        (f) =>
-          !f.name.toLowerCase().includes('tracker') &&
-          !f.name.toLowerCase().includes('student')
-      )
-    : [];
+  const visibleFiles = useMemo(() => {
+    return activeCourse
+      ? (
+          (currentFolder ? currentFolder.files : activeCourse.files) || []
+        ).filter(
+          (f) =>
+            !f.name.toLowerCase().includes('tracker') &&
+            !f.name.toLowerCase().includes('student')
+        )
+      : [];
+  }, [activeCourse, currentFolder]);
 
   // Model 1: Keyboard-driven Folder & File Navigation State
   const [keyboardIndex, setKeyboardIndex] = useState<number>(-1);
@@ -3020,7 +3499,39 @@ export default function App() {
                 target.closest('[contenteditable="true"]'))
           ));
 
-      if (isInput) return;
+      if (isInput) {
+        if (e.key === 'Escape') {
+          if (searchQuery) {
+            setSearchQuery('');
+          }
+          if (searchInputRef.current) {
+            searchInputRef.current.blur();
+          }
+        }
+        return;
+      }
+
+      // Quick Search hotkeys ('/' or 'Ctrl+K' / 'Cmd+K')
+      if ((e.key === '/' || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) && !previewFile) {
+        e.preventDefault();
+        if (activeCourse) {
+          setActiveCourse(null);
+          setActiveFolderTrail([]);
+        }
+        setTimeout(() => {
+          if (searchInputRef.current) {
+            searchInputRef.current.focus();
+            searchInputRef.current.select();
+          }
+        }, 10);
+        return;
+      }
+
+      if (e.key === 'Escape' && searchQuery) {
+        e.preventDefault();
+        setSearchQuery('');
+        return;
+      }
 
       // Hierarchy shortcuts on main dashboard/folder view:
       // Ctrl (File), Alt (Week/Folder), Shift (Subject)
@@ -3062,8 +3573,7 @@ export default function App() {
       if (e.key === 'Backspace' || e.key === 'Escape') {
         if (previewFile) {
           e.preventDefault();
-          setPreviewFile(null);
-          setPreviewFilesList([]);
+          handleClosePreview();
           return;
         }
         if (activeFolderTrail.length > 0) {
@@ -3254,33 +3764,40 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [previewFile, activeFolderTrail, activeCourse, visibleFolders, visibleFiles, data.courses, keyboardIndex]);
+  }, [previewFile, activeFolderTrail, activeCourse, visibleFolders, visibleFiles, data.courses, keyboardIndex, searchQuery]);
 
   return (
-    <div className="min-h-screen bg-[#F5F6F8] text-[#141414] font-sans selection:bg-[#FFE600] selection:text-black flex flex-col">
-      {/* Toast Notification */}
+    <div className="min-h-screen bg-[#F5F6F8] text-[#141414] font-sans selection:bg-[#FFE600] selection:text-black flex flex-col pb-[env(safe-area-inset-bottom,0px)]">
+      {/* Toast Notification (Issue 17: Responsive bounds & truncation) */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#141414] text-white text-xs font-mono px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2 border border-white/20 animate-bounce">
-          <span className="w-2 h-2 rounded-full bg-[#FF6D00] inline-block" />
-          <span>✓ {toastMessage}</span>
+        <div className="fixed bottom-6 left-4 right-4 sm:left-auto sm:right-6 max-w-sm sm:max-w-md mx-auto sm:mx-0 z-50 bg-[#141414] text-white text-xs font-mono px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2.5 border-2 border-[#141414] shadow-[3px_3px_0px_#FFE600] animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <span className="w-2 h-2 rounded-full bg-[#FF6D00] shrink-0 inline-block animate-ping" />
+          <span className="truncate flex-1">✓ {toastMessage}</span>
         </div>
       )}
 
-      {/* Interactive Cursor Companion Follower */}
-      {companionActive && (
+      {/* Interactive Cursor Companion Follower (Desktop only >= 768px; removed on mobile) */}
+      {companionActive && typeof window !== 'undefined' && window.innerWidth >= 768 && (
         <SlateCursorCompanion onDismiss={() => setCompanionActive(false)} />
       )}
 
-      {/* 1. MINIMALIST APPROVED HEADER */}
-      <header className="bg-white border-b-2 border-[#141414] px-4 sm:px-6 lg:px-12 py-3 sm:py-3.5 sticky top-0 z-40 shadow-xs">
+      {/* 1. MINIMALIST APPROVED HEADER (with iOS safe-area insets: Issue 9) */}
+      <header className="bg-white border-b-2 border-[#141414] px-4 sm:px-6 lg:px-12 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] pb-3 sm:pb-3.5 sticky top-0 z-40 shadow-xs pl-[calc(1rem+env(safe-area-inset-left,0px))] pr-[calc(1rem+env(safe-area-inset-right,0px))]">
         <div className="max-w-5xl mx-auto flex items-center justify-between gap-2">
           {/* Interactive Logo & Slate Mascot */}
           <InteractiveSlateLogo
             isCompanionActive={companionActive}
-            onToggleCompanion={() => setCompanionActive((prev) => !prev)}
+            onToggleCompanion={() => {
+              if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+                setCompanionActive((prev) => !prev);
+              }
+            }}
             onReset={() => {
               setActiveCourse(null);
               setActiveFolderTrail([]);
+              setPreviewFile(null);
+              updateUrl(null, [], null, false);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
           />
 
@@ -3337,7 +3854,7 @@ export default function App() {
                       <button
                         key={day}
                         onClick={() => handleSelectDay(day)}
-                        className={`relative z-10 py-1.5 px-0.5 sm:px-1.5 rounded-lg text-[11px] sm:text-xs font-mono font-bold transition-all duration-200 cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 active:scale-95 ${
+                        className={`relative z-10 min-h-[42px] sm:min-h-[36px] py-2 sm:py-1.5 px-0.5 sm:px-1.5 rounded-lg text-xs font-mono font-bold transition-all duration-200 cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 active:scale-95 touch-manipulation ${
                           isSelected
                             ? 'text-white'
                             : 'text-neutral-500 hover:text-neutral-900'
@@ -3356,8 +3873,50 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Next Class Live Countdown Radar */}
-              {nextUpcomingClass && (
+              {/* Class Radar (Live Ongoing Lecture or Next Class Countdown: Issue 6) */}
+              {currentLiveClass ? (
+                <div
+                  onClick={() => handleSelectDay(currentLiveClass.dayKey)}
+                  className="bg-emerald-50/90 hover:bg-emerald-100/90 border-2 border-[#141414] rounded-xl p-3 sm:px-4 sm:py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[2.5px_2.5px_0px_#141414] hover:shadow-[3.5px_3.5px_0px_#141414] transition-all cursor-pointer group select-none min-w-0"
+                  title="Click to jump to today's schedule"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <span className="relative flex h-2.5 w-2.5 shrink-0">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-600" />
+                    </span>
+                    <div className="text-xs min-w-0 flex-1 leading-snug">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-200/70 border border-emerald-400/50 px-1.5 py-0.5 rounded-sm">
+                          Live Now
+                        </span>
+                        <span className="font-bold text-sm text-[#141414] group-hover:text-emerald-900 transition-colors truncate">
+                          {currentLiveClass.slot.title}
+                        </span>
+                      </div>
+                      <div className="font-mono text-[11px] text-neutral-600 mt-1 flex items-center gap-2 flex-wrap">
+                        <span>Started at {currentLiveClass.slot.startStr}</span>
+                        <span>•</span>
+                        <span className="text-emerald-800 font-bold">Ends in {formatLectureDuration(currentLiveClass.remainingMinutes)}</span>
+                        {nextUpcomingClass && (
+                          <>
+                            <span className="text-neutral-400 hidden xs:inline">•</span>
+                            <span className="text-neutral-500 hidden xs:inline truncate">
+                              Up next: {nextUpcomingClass.slot.title} ({nextUpcomingClass.slot.startStr})
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                    <span className="font-mono text-[11px] sm:text-xs font-bold text-[#141414] bg-white border-2 border-[#141414] px-2.5 py-1 rounded-lg shadow-[1.5px_1.5px_0px_#141414]">
+                      {currentLiveClass.slot.room}
+                    </span>
+                  </div>
+                </div>
+              ) : nextUpcomingClass ? (
                 <div
                   onClick={() => handleSelectDay(nextUpcomingClass.dayKey)}
                   className="bg-neutral-50/90 hover:bg-neutral-100/90 border border-neutral-200/90 rounded-xl p-3 sm:px-3.5 sm:py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 transition-all cursor-pointer group select-none min-w-0"
@@ -3391,19 +3950,18 @@ export default function App() {
                     </span>
                   </div>
                 </div>
-              )}
+              ) : null}
 
               {/* Transit Timeline Flow with Calm Dissolve Transition */}
               <div key={animKey} className="space-y-3 anim-fade-in">
                 {timelineItems.map((item, itemIdx) => {
                   if (item.type === 'break') {
                     return (
-                      <div key={`break-${itemIdx}`} className="flex items-center gap-3 sm:gap-4">
-                        {/* Timeline Rail Track segment */}
-                        <div className="w-6 sm:w-8 shrink-0 flex items-center justify-center">
-                          <div className="w-0.5 h-7 bg-neutral-200 relative flex items-center justify-center">
-                            <span className="w-1.5 h-0.5 bg-neutral-400 block" />
-                          </div>
+                      <div key={`break-${itemIdx}`} className="flex items-center gap-2 sm:gap-4">
+                        {/* Timeline Rail Track segment (Issue 21: Seamless continuous transit line) */}
+                        <div className="w-5 sm:w-8 shrink-0 flex items-center justify-center relative self-stretch">
+                          <div className="absolute -top-3 -bottom-3 left-1/2 -translate-x-1/2 w-0.5 bg-neutral-200 z-0" />
+                          <span className="w-2 h-0.5 bg-neutral-400 block relative z-10 rounded-full" />
                         </div>
 
                         {/* Break Pill */}
@@ -3417,7 +3975,7 @@ export default function App() {
                             <circle cx="12" cy="12" r="9" strokeWidth="2" />
                             <polyline points="12 7 12 12 15 14" strokeWidth="2" strokeLinecap="round" />
                           </svg>
-                          <span className="font-mono font-medium text-[11px] text-neutral-500">
+                          <span className="font-mono font-medium text-xs text-neutral-600">
                             {item.startStr} &ndash; {item.endStr}
                           </span>
                           <span className="w-1 h-1 rounded-full bg-neutral-300" />
@@ -3503,16 +4061,16 @@ export default function App() {
                             >
                               {slot.startStr}
                             </span>
-                            <span className="block font-mono text-[10px] text-neutral-400">
+                            <span className="block font-mono text-[11px] sm:text-xs text-neutral-600 font-medium">
                               {slot.endStr}
                             </span>
                             <span
-                              className={`inline-block mt-1 font-mono text-[9px] font-semibold px-1.5 py-0.5 rounded border ${
+                              className={`inline-block mt-1 font-mono text-[11px] font-bold px-2 py-0.5 rounded-md border ${
                                 isLive
                                   ? 'bg-emerald-100/70 border-emerald-300 text-emerald-800'
                                   : isNext
                                   ? 'bg-orange-100/70 border-orange-200 text-[#FF6D00]'
-                                  : 'bg-neutral-100 border-neutral-200 text-neutral-500'
+                                  : 'bg-neutral-100 border-neutral-300 text-neutral-700'
                               }`}
                             >
                               {formatLectureDuration(slot.endMinutes - slot.startMinutes)}
@@ -3541,17 +4099,17 @@ export default function App() {
                                 {slot.title}
                               </h3>
                               {isLive && (
-                                <span className="text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-600 text-white px-2 py-0.5 rounded-full animate-pulse shrink-0">
+                                <span className="text-[10px] sm:text-[11px] font-mono font-bold uppercase tracking-wider bg-emerald-600 text-white px-2.5 py-0.5 rounded-full animate-pulse shrink-0">
                                   Happening Now
                                 </span>
                               )}
                               {isNext && (
-                                <span className="text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-wider bg-[#FF6D00] text-white px-2.5 py-0.5 rounded-full inline-flex items-center shrink-0">
+                                <span className="text-[10px] sm:text-[11px] font-mono font-bold uppercase tracking-wider bg-[#FF6D00] text-white px-2.5 py-0.5 rounded-full inline-flex items-center shrink-0">
                                   Up Next
                                 </span>
                               )}
                               {isDone && (
-                                <span className="text-[9px] sm:text-[10px] font-mono font-semibold text-neutral-400 shrink-0">
+                                <span className="text-[10px] sm:text-[11px] font-mono font-bold text-neutral-500 shrink-0">
                                   Completed
                                 </span>
                               )}
@@ -3623,21 +4181,231 @@ export default function App() {
               </div>
             </section>
 
-            {/* PILLAR 2: COURSES & NOTES */}
-            <section className="space-y-3.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+            {/* PILLAR 2: COURSES & NOTES (Issue 20: Instant Search & Filter) */}
+            <section className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
                   <h2
                     className="font-bold text-base md:text-lg text-[#141414]"
                     style={{ fontFamily: '"Space Grotesk", sans-serif' }}
                   >
-                    Courses
+                    Courses & Academic Vault
                   </h2>
+                  <span className="text-xs font-mono font-bold text-neutral-600 bg-white border border-[#141414] px-2 py-0.5 rounded-md shadow-[1px_1px_0px_#141414]">
+                    {data.courses.length} courses
+                  </span>
+                </div>
+
+                {/* Neo-brutalist Instant Quick Search Bar */}
+                <div className="relative w-full sm:w-80">
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search courses, folders, slides... (/)"
+                    aria-label="Search courses and study materials"
+                    className="w-full bg-white border-2 border-[#141414] rounded-xl px-3.5 py-2 pl-9 pr-9 text-xs sm:text-sm font-medium text-[#141414] placeholder:text-neutral-400 focus:outline-none shadow-[2px_2px_0px_#141414] focus:shadow-[3.5px_3.5px_0px_#141414] transition-all"
+                  />
+                  <svg
+                    className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2.5"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                  {searchQuery ? (
+                    <button
+                      onClick={() => {
+                        setSearchQuery('');
+                        searchInputRef.current?.focus();
+                      }}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-[#141414] p-1 font-mono text-xs rounded hover:bg-neutral-100 transition-colors cursor-pointer"
+                      title="Clear search (Esc)"
+                    >
+                      ✕
+                    </button>
+                  ) : (
+                    <span className="hidden sm:inline-block absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono font-bold text-neutral-400 border border-neutral-300 rounded px-1.5 py-0.5 bg-neutral-50 pointer-events-none">
+                      /
+                    </span>
+                  )}
                 </div>
               </div>
 
-              {/* Course Cards Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Search Active State */}
+              {normalizedQuery ? (
+                <div className="space-y-5 animate-in fade-in duration-150">
+                  {/* Results Count & Clear Header */}
+                  <div className="flex items-center justify-between text-xs font-mono text-neutral-500 pb-1 border-b border-neutral-200">
+                    <span>
+                      Found {matchingCourses.length} {matchingCourses.length === 1 ? 'course' : 'courses'} and {matchingFiles.length} {matchingFiles.length === 1 ? 'file' : 'files'}
+                    </span>
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="hover:text-[#141414] underline cursor-pointer font-bold"
+                    >
+                      Clear search (Esc)
+                    </button>
+                  </div>
+
+                  {/* Empty Search State */}
+                  {matchingCourses.length === 0 && matchingFiles.length === 0 && (
+                    <div className="bg-white border-2 border-[#141414] rounded-2xl p-8 sm:p-12 text-center shadow-[3px_3px_0px_#141414] space-y-3">
+                      <div className="w-12 h-12 mx-auto rounded-full bg-neutral-100 border-2 border-[#141414] flex items-center justify-center text-lg font-mono font-bold">
+                        ?
+                      </div>
+                      <h3 className="font-bold text-base text-[#141414]">No study materials found</h3>
+                      <p className="text-xs text-neutral-500 font-mono max-w-sm mx-auto">
+                        No courses, folders, or documents matched &ldquo;{searchQuery}&rdquo;. Try another keyword like &ldquo;lab&rdquo;, &ldquo;physics&rdquo;, or &ldquo;lecture&rdquo;.
+                      </p>
+                      <div className="pt-2">
+                        <button
+                          onClick={() => {
+                            setSearchQuery('');
+                            searchInputRef.current?.focus();
+                          }}
+                          className="px-4 py-2 bg-[#141414] text-white rounded-xl text-xs font-bold hover:bg-neutral-800 transition-all cursor-pointer shadow-[2px_2px_0px_#FFE600] active:scale-95"
+                        >
+                          Clear Search
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Matching Courses */}
+                  {matchingCourses.length > 0 && (
+                    <div className="space-y-2.5">
+                      <span className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-500">
+                        Matching Courses ({matchingCourses.length})
+                      </span>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {matchingCourses.map((course) => {
+                          const totalFiles = countCourseFiles(course);
+                          return (
+                            <div
+                              key={course.code}
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => {
+                                handleOpenCourse(course);
+                                setKeyboardIndex(-1);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  handleOpenCourse(course);
+                                  setKeyboardIndex(-1);
+                                }
+                              }}
+                              className="border-2 border-[#141414] rounded-xl p-4 shadow-[2.5px_2.5px_0px_#141414] hover:shadow-[4px_4px_0px_#141414] hover:-translate-y-0.5 transition-all cursor-pointer flex items-center justify-between gap-3 group"
+                              style={{ backgroundColor: course.tint }}
+                            >
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono text-xs font-bold text-[#141414] bg-white border border-[#141414] px-1.5 py-0.5 rounded shadow-2xs">
+                                    {course.code}
+                                  </span>
+                                  <span className="text-xs text-neutral-600 truncate">
+                                    {course.instructor}
+                                  </span>
+                                </div>
+                                <h4 className="font-bold text-sm text-[#141414] mt-1 truncate group-hover:text-[#FF6D00] transition-colors">
+                                  {course.title}
+                                </h4>
+                                <span className="text-[11px] font-mono text-neutral-600 mt-0.5 block">
+                                  {totalFiles} {totalFiles === 1 ? 'file' : 'files'} available
+                                </span>
+                              </div>
+                              <span className="text-xs font-bold font-mono px-3 py-1.5 bg-[#141414] text-white rounded-lg shrink-0 group-hover:translate-x-0.5 transition-transform">
+                                Open →
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Matching Files across All Courses */}
+                  {matchingFiles.length > 0 && (
+                    <div className="space-y-2.5 pt-1">
+                      <span className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-500">
+                        Matching Files & Documents ({matchingFiles.length})
+                      </span>
+                      <div className="space-y-2">
+                        {matchingFiles.map((res, matchIdx) => (
+                          <div
+                            key={`${res.course.code}-${res.file.name}-${matchIdx}`}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => handleOpenSearchResultFile(res)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                handleOpenSearchResultFile(res);
+                              }
+                            }}
+                            className="bg-white border-2 border-[#141414] rounded-xl p-3 sm:p-3.5 px-3.5 sm:px-4 shadow-[2px_2px_0px_#141414] hover:shadow-[3.5px_3.5px_0px_#141414] hover:-translate-y-0.5 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group cursor-pointer"
+                          >
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <div className="w-8 h-8 rounded-lg bg-neutral-100 border border-[#141414] flex items-center justify-center shrink-0">
+                                <FileIllustration type={res.file.type} />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <span className="font-bold text-xs sm:text-sm block truncate text-[#141414] group-hover:text-[#FF6D00] transition-colors">
+                                  {res.file.name}
+                                </span>
+                                <div className="flex items-center gap-1.5 text-[11px] text-neutral-500 font-mono mt-0.5 flex-wrap">
+                                  <span className="font-bold text-neutral-700 bg-neutral-100 border border-neutral-300 px-1.5 py-0.2 rounded">
+                                    {res.course.code}
+                                  </span>
+                                  {res.folderTrail.length > 0 && (
+                                    <span className="truncate max-w-[200px] sm:max-w-none text-neutral-600">
+                                      {res.folderTrail.map((f) => f.name).join(' / ')}
+                                    </span>
+                                  )}
+                                  <span>•</span>
+                                  <span>{res.file.size}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenSearchResultFile(res);
+                                }}
+                                className="px-3 py-1.5 rounded-lg text-xs font-bold border-2 border-[#141414] bg-white text-[#141414] hover:bg-neutral-100 transition-all shadow-[1px_1px_0px_#141414] active:scale-95 cursor-pointer"
+                              >
+                                Preview
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDownload(res.file);
+                                }}
+                                className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[#141414] text-white hover:bg-neutral-800 transition-all shadow-[1px_1px_0px_rgba(0,0,0,0.3)] active:scale-95 cursor-pointer"
+                              >
+                                Download
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* Course Cards Grid (Rendered when no search query active) */
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {data.courses.map((course, idx) => {
                   const totalFiles = countCourseFiles(course);
                   const isFocused = !activeCourse && keyboardIndex === idx;
@@ -3645,12 +4413,22 @@ export default function App() {
                   return (
                     <div
                       key={course.code}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Open course ${course.title} (${course.code})`}
                       data-keyboard-focused={isFocused ? 'true' : undefined}
                       onClick={() => {
                         handleOpenCourse(course);
                         setKeyboardIndex(-1);
                       }}
-                      className={`border-2 border-[#141414] rounded-2xl p-5 space-y-4 shadow-[3px_3px_0px_#141414] hover:shadow-[4px_4px_0px_#141414] transition-all cursor-pointer group flex flex-col justify-between ${
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleOpenCourse(course);
+                          setKeyboardIndex(-1);
+                        }
+                      }}
+                      className={`border-2 border-[#141414] rounded-2xl p-5 space-y-4 shadow-[3px_3px_0px_#141414] hover:shadow-[4px_4px_0px_#141414] transition-all cursor-pointer group flex flex-col justify-between focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[#141414] focus-visible:ring-offset-2 focus-visible:scale-[1.01] ${
                         isFocused ? 'ring-3 ring-[#141414] ring-offset-2 scale-[1.01]' : ''
                       }`}
                       style={{ backgroundColor: course.tint }}
@@ -3665,7 +4443,10 @@ export default function App() {
                             className="text-xs font-bold shrink-0"
                             style={{ fontFamily: '"Caveat", cursive', color: course.accent, fontSize: '15px' }}
                           >
-                            [ {course.folders.filter((f) => countFiles(f) > 0 || (f.folders && f.folders.length > 0)).length} Folders • {totalFiles} Files ]
+                            {(() => {
+                              const fCount = course.folders.filter((f) => countFiles(f) > 0 || (f.folders && f.folders.length > 0)).length;
+                              return `[ ${fCount} ${fCount === 1 ? 'Folder' : 'Folders'} • ${totalFiles} ${totalFiles === 1 ? 'File' : 'Files'} ]`;
+                            })()}
                           </span>
                         </div>
 
@@ -3699,6 +4480,7 @@ export default function App() {
                   );
                 })}
               </div>
+              )}
             </section>
           </>
         )}
@@ -3729,6 +4511,8 @@ export default function App() {
                   onClick={() => {
                     setActiveCourse(null);
                     setActiveFolderTrail([]);
+                    setPreviewFile(null);
+                    updateUrl(null, [], null, false);
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
                   className="hover:text-[#141414] hover:underline transition-colors"
@@ -3739,6 +4523,8 @@ export default function App() {
                 <button
                   onClick={() => {
                     setActiveFolderTrail([]);
+                    setPreviewFile(null);
+                    updateUrl(activeCourse, [], null, false);
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
                   className={`transition-colors ${
@@ -3757,7 +4543,10 @@ export default function App() {
                       <button
                         onClick={() => {
                           if (!isLast) {
-                            setActiveFolderTrail((prev) => prev.slice(0, i + 1));
+                            const nextTrail = activeFolderTrail.slice(0, i + 1);
+                            setActiveFolderTrail(nextTrail);
+                            setPreviewFile(null);
+                            updateUrl(activeCourse, nextTrail, null, false);
                             window.scrollTo({ top: 0, behavior: 'smooth' });
                           }
                         }}
@@ -3820,12 +4609,22 @@ export default function App() {
                     return (
                       <div
                         key={idx}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Open folder ${folder.name}`}
                         data-keyboard-focused={isFocused ? 'true' : undefined}
                         onClick={() => {
                           handleOpenFolder(folder);
                           setKeyboardIndex(-1);
                         }}
-                        className={`bg-white border-2 border-[#141414] rounded-xl p-3 sm:p-3.5 px-3.5 sm:px-4 shadow-[2px_2px_0px_#141414] hover:shadow-[3px_3px_0px_#141414] transition-all cursor-pointer flex items-center justify-between gap-3 group min-w-0 ${
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleOpenFolder(folder);
+                            setKeyboardIndex(-1);
+                          }
+                        }}
+                        className={`bg-white border-2 border-[#141414] rounded-xl p-3 sm:p-3.5 px-3.5 sm:px-4 shadow-[2px_2px_0px_#141414] hover:shadow-[3px_3px_0px_#141414] transition-all cursor-pointer flex items-center justify-between gap-3 group min-w-0 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[#141414] focus-visible:ring-offset-2 focus-visible:scale-[1.01] ${
                           isFocused ? 'ring-3 ring-[#141414] ring-offset-2 scale-[1.01]' : ''
                         }`}
                       >
@@ -3840,9 +4639,10 @@ export default function App() {
                             <span className="text-[11px] text-neutral-500 font-mono block truncate">
                               {folder.name.toLowerCase().includes('recommend')
                                 ? 'Developer Pick'
-                                : countFiles(folder) === 0
-                                ? 'Empty'
-                                : `${countFiles(folder)} files inside`}
+                                : (() => {
+                                    const fc = countFiles(folder);
+                                    return fc === 0 ? 'Empty' : `${fc} ${fc === 1 ? 'file' : 'files'} inside`;
+                                  })()}
                             </span>
                           </div>
                         </div>
@@ -3906,7 +4706,7 @@ export default function App() {
                               e.stopPropagation();
                               handleOpenPreview(file, visibleFiles);
                             }}
-                            className="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold bg-white border-2 border-[#141414] text-[#141414] hover:bg-neutral-100 transition-all shadow-[1px_1px_0px_#141414] active:scale-95 text-center min-h-[36px] flex items-center justify-center cursor-pointer"
+                            className="flex-1 sm:flex-none px-3.5 sm:px-3 py-2 sm:py-1.5 rounded-lg text-xs font-bold bg-white border-2 border-[#141414] text-[#141414] hover:bg-neutral-100 transition-all shadow-[1px_1px_0px_#141414] active:scale-95 text-center min-h-[44px] sm:min-h-[36px] flex items-center justify-center cursor-pointer touch-manipulation"
                             title="Open preview in browser"
                           >
                             Preview
@@ -3916,7 +4716,7 @@ export default function App() {
                               e.stopPropagation();
                               handleDownload(file);
                             }}
-                            className="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold bg-[#141414] text-white hover:bg-neutral-800 transition-all shadow-[1px_1px_0px_rgba(0,0,0,0.3)] active:scale-95 text-center min-h-[36px] flex items-center justify-center cursor-pointer"
+                            className="flex-1 sm:flex-none px-3.5 sm:px-3 py-2 sm:py-1.5 rounded-lg text-xs font-bold bg-[#141414] text-white hover:bg-neutral-800 transition-all shadow-[1px_1px_0px_rgba(0,0,0,0.3)] active:scale-95 text-center min-h-[44px] sm:min-h-[36px] flex items-center justify-center cursor-pointer touch-manipulation"
                           >
                             Download
                           </button>
@@ -3994,21 +4794,19 @@ export default function App() {
         </div>
       </footer>
 
-      {/* In-Browser Document Previewer Modal */}
+      {/* In-Browser Document Previewer Modal with History/Hash Integration (Issue 1) */}
       <FilePreviewModal
         file={previewFile}
         folderFiles={previewFilesList}
         onNavigate={(nextFile) => {
           setPreviewFile(nextFile);
           triggerToast(nextFile.name);
+          updateUrl(activeCourse, activeFolderTrail, nextFile, true);
         }}
         onNavigateFile={handleNavigateFile}
         onNavigateFolder={handleNavigateFolder}
         onNavigateCourse={handleNavigateCourse}
-        onClose={() => {
-          setPreviewFile(null);
-          setPreviewFilesList([]);
-        }}
+        onClose={handleClosePreview}
         onDownload={handleDownload}
       />
     </div>
