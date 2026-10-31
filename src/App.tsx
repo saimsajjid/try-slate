@@ -3508,6 +3508,9 @@ export default function App() {
             searchInputRef.current.blur();
           }
         }
+        if (e.key === '/' && target === searchInputRef.current && searchQuery === '') {
+          e.preventDefault();
+        }
         return;
       }
 
@@ -3520,7 +3523,23 @@ export default function App() {
         }
         setTimeout(() => {
           if (searchInputRef.current) {
-            searchInputRef.current.focus();
+            const header = document.querySelector('header');
+            const headerHeight = header ? header.offsetHeight : 64;
+            const inputRect = searchInputRef.current.getBoundingClientRect();
+
+            // If search bar is already comfortably visible near the top, do not scroll
+            const isComfortablyVisible = inputRect.top >= headerHeight && inputRect.top <= 220;
+            if (!isComfortablyVisible) {
+              const section = searchInputRef.current.closest('section');
+              if (section) {
+                const sectionTop = section.getBoundingClientRect().top + window.scrollY;
+                const targetY = Math.max(0, sectionTop - headerHeight - 12);
+                window.scrollTo({ top: targetY, behavior: 'smooth' });
+              }
+            }
+
+            // Prevent browser default center-scroll behavior
+            searchInputRef.current.focus({ preventScroll: true });
             searchInputRef.current.select();
           }
         }, 10);
@@ -4203,7 +4222,7 @@ export default function App() {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search courses, folders, slides... (/)"
+                    placeholder="Search courses, folders, slides..."
                     aria-label="Search courses and study materials"
                     className="w-full bg-white border-2 border-[#141414] rounded-xl px-3.5 py-2 pl-9 pr-9 text-xs sm:text-sm font-medium text-[#141414] placeholder:text-neutral-400 focus:outline-none shadow-[2px_2px_0px_#141414] focus:shadow-[3.5px_3.5px_0px_#141414] transition-all"
                   />
@@ -4224,7 +4243,7 @@ export default function App() {
                     <button
                       onClick={() => {
                         setSearchQuery('');
-                        searchInputRef.current?.focus();
+                        searchInputRef.current?.focus({ preventScroll: true });
                       }}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-[#141414] p-1 font-mono text-xs rounded hover:bg-neutral-100 transition-colors cursor-pointer"
                       title="Clear search (Esc)"
@@ -4269,7 +4288,7 @@ export default function App() {
                         <button
                           onClick={() => {
                             setSearchQuery('');
-                            searchInputRef.current?.focus();
+                            searchInputRef.current?.focus({ preventScroll: true });
                           }}
                           className="px-4 py-2 bg-[#141414] text-white rounded-xl text-xs font-bold hover:bg-neutral-800 transition-all cursor-pointer shadow-[2px_2px_0px_#FFE600] active:scale-95"
                         >
